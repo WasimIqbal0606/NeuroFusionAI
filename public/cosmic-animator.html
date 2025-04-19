@@ -1,0 +1,3022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeuroFusionOS - Cosmic Code Animator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/gsap.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #00f0ff;
+      --secondary-color: #7700ff;
+      --accent-color: #ff00aa;
+      --background-dark: #050510;
+      --background-medium: #080830;
+      --background-light: #10105a;
+      --text-primary: #ffffff;
+      --text-secondary: #aaaaff;
+      --success-color: #00ffa3;
+      --warning-color: #ffcc00;
+      --error-color: #ff2266;
+      --glow-primary: 0 0 10px rgba(0, 240, 255, 0.7);
+      --glow-secondary: 0 0 15px rgba(119, 0, 255, 0.7);
+      --glow-accent: 0 0 15px rgba(255, 0, 170, 0.7);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--background-dark);
+      color: var(--text-primary);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      position: relative;
+    }
+    
+    /* Main Layout */
+    .container {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      grid-template-columns: 300px 1fr 300px;
+      grid-template-areas:
+        "header header header"
+        "left-panel main right-panel"
+        "footer footer footer";
+      height: 100vh;
+      padding: 20px;
+      gap: 20px;
+    }
+    
+    .panel {
+      background: rgba(8, 8, 48, 0.7);
+      backdrop-filter: blur(15px);
+      border-radius: 20px;
+      padding: 20px;
+    }
+    
+    .header {
+      grid-area: header;
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      box-shadow: var(--glow-primary), inset 0 0 20px rgba(0, 240, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 1.4rem;
+      background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .logo-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      box-shadow: var(--glow-primary);
+    }
+    
+    .nav-controls {
+      display: flex;
+      gap: 15px;
+    }
+    
+    .nav-item {
+      padding: 8px 15px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .nav-item:hover, .nav-item.active {
+      background: rgba(0, 240, 255, 0.1);
+      box-shadow: var(--glow-primary);
+      transform: translateY(-2px);
+    }
+    
+    .left-panel {
+      grid-area: left-panel;
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      box-shadow: var(--glow-primary), inset 0 0 20px rgba(0, 240, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+    }
+    
+    .right-panel {
+      grid-area: right-panel;
+      border: 1px solid rgba(119, 0, 255, 0.2);
+      box-shadow: var(--glow-secondary), inset 0 0 20px rgba(119, 0, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+    }
+    
+    .main-content {
+      grid-area: main;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .visualization-container {
+      flex: 1;
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(0, 240, 255, 0.1);
+    }
+    
+    .footer {
+      grid-area: footer;
+      border: 1px solid rgba(255, 0, 170, 0.2);
+      box-shadow: var(--glow-accent), inset 0 0 20px rgba(255, 0, 170, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .footer-logo {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.9rem;
+      color: var(--accent-color);
+    }
+    
+    .footer-info {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    
+    /* Control panels */
+    .control-section {
+      margin-bottom: 15px;
+    }
+    
+    .section-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .control-group {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      padding: 15px;
+      border: 1px solid rgba(0, 240, 255, 0.1);
+    }
+    
+    .control-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .control-row:last-child {
+      margin-bottom: 0;
+    }
+    
+    .control-label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      width: 100px;
+      flex-shrink: 0;
+    }
+    
+    .control-input {
+      flex: 1;
+    }
+    
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .slider {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+    }
+    
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      cursor: pointer;
+      box-shadow: var(--glow-primary);
+    }
+    
+    .slider-value {
+      font-size: 0.8rem;
+      font-family: 'Orbitron', sans-serif;
+      width: 40px;
+      text-align: center;
+    }
+    
+    .button-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    .control-button {
+      flex: 1;
+      padding: 8px 0;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .control-button:hover, .control-button.active {
+      background: rgba(0, 240, 255, 0.1);
+      box-shadow: var(--glow-primary);
+      transform: translateY(-2px);
+    }
+    
+    .control-button.accent {
+      border-color: rgba(255, 0, 170, 0.3);
+    }
+    
+    .control-button.accent:hover {
+      background: rgba(255, 0, 170, 0.1);
+      box-shadow: var(--glow-accent);
+    }
+    
+    .toggle-button {
+      width: 50px;
+      height: 24px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .toggle-button::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--text-secondary);
+      transition: all 0.3s ease;
+    }
+    
+    .toggle-button.active {
+      background: rgba(0, 240, 255, 0.2);
+      border-color: rgba(0, 240, 255, 0.4);
+    }
+    
+    .toggle-button.active::after {
+      left: calc(100% - 20px);
+      background: var(--primary-color);
+      box-shadow: var(--glow-primary);
+    }
+    
+    /* Code editor specific styles */
+    .editor-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .editor-tabs {
+      display: flex;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 5px 5px 0;
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    
+    .editor-tabs::-webkit-scrollbar {
+      height: 5px;
+    }
+    
+    .editor-tabs::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.3);
+      border-radius: 5px;
+    }
+    
+    .editor-tab {
+      padding: 8px 15px;
+      background: rgba(0, 0, 0, 0.4);
+      border-top-left-radius: 5px;
+      border-top-right-radius: 5px;
+      margin-right: 3px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      white-space: nowrap;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    .editor-tab.active {
+      background: rgba(8, 8, 48, 0.8);
+      color: var(--primary-color);
+    }
+    
+    .editor-tab-close {
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+    
+    .editor-tab-close:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .editor-content {
+      flex: 1;
+      background: rgba(8, 8, 48, 0.8);
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .code-area {
+      width: 100%;
+      height: 100%;
+      resize: none;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      padding: 15px;
+    }
+    
+    .editor-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    
+    /* Code animation */
+    .code-particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      box-shadow: var(--glow-primary);
+      z-index: 10;
+    }
+    
+    .code-line-highlight {
+      position: absolute;
+      height: 1.5em;
+      width: 100%;
+      background: rgba(0, 240, 255, 0.1);
+      border-radius: 3px;
+      pointer-events: none;
+      z-index: 5;
+    }
+    
+    .code-block-highlight {
+      position: absolute;
+      background: rgba(255, 0, 170, 0.05);
+      border: 1px solid rgba(255, 0, 170, 0.2);
+      border-radius: 5px;
+      pointer-events: none;
+      z-index: 4;
+    }
+    
+    /* Line numbers */
+    .line-numbers {
+      position: absolute;
+      top: 15px;
+      left: 0;
+      width: 40px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      color: rgba(255, 255, 255, 0.3);
+      text-align: right;
+      padding-right: 10px;
+      user-select: none;
+      pointer-events: none;
+    }
+    
+    /* 3D Visualization */
+    .visualization-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 20;
+    }
+    
+    /* Syntax highlighting */
+    .token-keyword {
+      color: #ff79c6;
+    }
+    
+    .token-function {
+      color: #50fa7b;
+    }
+    
+    .token-string {
+      color: #f1fa8c;
+    }
+    
+    .token-comment {
+      color: #6272a4;
+    }
+    
+    .token-variable {
+      color: #bd93f9;
+    }
+    
+    .token-operator {
+      color: #ff79c6;
+    }
+    
+    .token-number {
+      color: #bd93f9;
+    }
+    
+    /* Themes card */
+    .theme-card {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    .theme-option {
+      height: 60px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+    
+    .theme-option:hover {
+      transform: translateY(-3px);
+    }
+    
+    .theme-option.active {
+      border-color: var(--primary-color);
+      box-shadow: var(--glow-primary);
+    }
+    
+    .theme-option.cyberpunk {
+      background: linear-gradient(45deg, #00f0ff, #7700ff, #ff00aa);
+    }
+    
+    .theme-option.matrix {
+      background: linear-gradient(45deg, #00ff41, #003b00, #001500);
+    }
+    
+    .theme-option.sunset {
+      background: linear-gradient(45deg, #ff8a00, #da1b60, #8823b5);
+    }
+    
+    .theme-option.midnight {
+      background: linear-gradient(45deg, #00008b, #191970, #4b0082);
+    }
+    
+    .theme-option.aurora {
+      background: linear-gradient(45deg, #00ffa3, #00ffff, #7700ff);
+    }
+    
+    .theme-option.cosmic {
+      background: linear-gradient(45deg, #5b00a7, #6d0191, #b51c8f);
+    }
+    
+    /* Animation presets */
+    .animation-presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    
+    .preset-button {
+      padding: 8px 12px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(119, 0, 255, 0.2);
+      border-radius: 5px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .preset-button:hover, .preset-button.active {
+      background: rgba(119, 0, 255, 0.1);
+      box-shadow: var(--glow-secondary);
+      transform: translateY(-2px);
+    }
+    
+    /* Stats */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+    
+    .stat-item {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      padding: 12px;
+      border: 1px solid rgba(119, 0, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+    
+    .stat-item:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--glow-secondary);
+    }
+    
+    .stat-value {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 5px;
+    }
+    
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    /* Code snippets */
+    .snippets-list {
+      margin-top: 10px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .snippet-item {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      border: 1px solid rgba(119, 0, 255, 0.2);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .snippet-item:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--glow-secondary);
+    }
+    
+    .snippet-name {
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 5px;
+    }
+    
+    .snippet-preview {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      white-space: pre;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.4;
+      max-height: 2.8em;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    
+    /* Transport Controls */
+    .transport-controls {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    
+    .transport-button {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 0, 170, 0.3);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: var(--accent-color);
+      font-size: 1rem;
+    }
+    
+    .transport-button:hover {
+      background: rgba(255, 0, 170, 0.1);
+      box-shadow: var(--glow-accent);
+      transform: scale(1.1);
+    }
+    
+    .transport-button.primary {
+      width: 50px;
+      height: 50px;
+      font-size: 1.2rem;
+    }
+    
+    /* Warning messages */
+    .warning-message {
+      background: rgba(255, 204, 0, 0.1);
+      border: 1px solid rgba(255, 204, 0, 0.3);
+      color: var(--warning-color);
+      border-radius: 10px;
+      padding: 10px;
+      margin-top: 20px;
+      font-size: 0.9rem;
+    }
+    
+    /* Media Queries */
+    @media (max-width: 1200px) {
+      .container {
+        grid-template-columns: 250px 1fr 250px;
+      }
+    }
+    
+    @media (max-width: 992px) {
+      .container {
+        grid-template-columns: 200px 1fr;
+        grid-template-areas:
+          "header header"
+          "left-panel main"
+          "footer footer";
+      }
+      
+      .right-panel {
+        display: none;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "header"
+          "main"
+          "left-panel"
+          "footer";
+      }
+      
+      .header {
+        padding: 10px 15px;
+      }
+      
+      .logo {
+        font-size: 1.2rem;
+      }
+      
+      .nav-controls {
+        display: none;
+      }
+      
+      .left-panel {
+        margin-top: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="panel header">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z" fill="white"/>
+            <path d="M12 6C8.69 6 6 8.69 6 12C6 15.31 8.69 18 12 18C15.31 18 18 15.31 18 12C18 8.69 15.31 6 12 6ZM12 16C9.79 16 8 14.21 8 12C8 9.79 9.79 8 12 8C14.21 8 16 9.79 16 12C16 14.21 14.21 16 12 16Z" fill="white"/>
+          </svg>
+        </div>
+        <div>Cosmic Code Animator</div>
+      </div>
+      
+      <div class="nav-controls">
+        <div class="nav-item active">CODE</div>
+        <div class="nav-item">VISUAL</div>
+        <div class="nav-item">EXPORT</div>
+        <div class="nav-item">SETTINGS</div>
+      </div>
+    </header>
+    
+    <section class="panel left-panel">
+      <div class="control-section">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M15.9 18.5l-6-5.5 6-5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          ANIMATION SETTINGS
+        </div>
+        <div class="control-group">
+          <div class="control-row">
+            <div class="control-label">Speed</div>
+            <div class="control-input slider-container">
+              <input type="range" class="slider" id="animation-speed" min="0.5" max="5" step="0.1" value="1.5">
+              <div class="slider-value" id="speed-value">1.5</div>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">Particle Size</div>
+            <div class="control-input slider-container">
+              <input type="range" class="slider" id="particle-size" min="1" max="10" value="3">
+              <div class="slider-value" id="size-value">3</div>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">Density</div>
+            <div class="control-input slider-container">
+              <input type="range" class="slider" id="particle-density" min="1" max="20" value="8">
+              <div class="slider-value" id="density-value">8</div>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">Glow Intensity</div>
+            <div class="control-input slider-container">
+              <input type="range" class="slider" id="glow-intensity" min="0" max="10" value="5">
+              <div class="slider-value" id="glow-value">5</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="control-section">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9 17H7V10H9V17ZM13 17H11V7H13V17ZM17 17H15V13H17V17ZM19 19H5V5H19V19.1M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3Z" fill="currentColor"/>
+          </svg>
+          VISUAL EFFECTS
+        </div>
+        <div class="control-group">
+          <div class="control-row">
+            <div class="control-label">Path Trails</div>
+            <div class="control-input">
+              <div class="toggle-button active" id="trails-toggle"></div>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">Line Highlights</div>
+            <div class="control-input">
+              <div class="toggle-button active" id="highlights-toggle"></div>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">Code Blocks</div>
+            <div class="control-input">
+              <div class="toggle-button active" id="blocks-toggle"></div>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">3D Effects</div>
+            <div class="control-input">
+              <div class="toggle-button active" id="3d-toggle"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="control-section">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          ANIMATION STYLE
+        </div>
+        <div class="control-group">
+          <div class="animation-presets">
+            <div class="preset-button active" data-preset="flow">FLOW</div>
+            <div class="preset-button" data-preset="pulse">PULSE</div>
+            <div class="preset-button" data-preset="explode">EXPLODE</div>
+            <div class="preset-button" data-preset="matrix">MATRIX</div>
+            <div class="preset-button" data-preset="quantum">QUANTUM</div>
+            <div class="preset-button" data-preset="circuit">CIRCUIT</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="control-section">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 9L12 16L5 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          COLOR THEME
+        </div>
+        <div class="control-group">
+          <div class="theme-card">
+            <div class="theme-option cyberpunk active" data-theme="cyberpunk"></div>
+            <div class="theme-option matrix" data-theme="matrix"></div>
+            <div class="theme-option sunset" data-theme="sunset"></div>
+            <div class="theme-option midnight" data-theme="midnight"></div>
+            <div class="theme-option aurora" data-theme="aurora"></div>
+            <div class="theme-option cosmic" data-theme="cosmic"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <section class="main-content">
+      <div class="visualization-container">
+        <div class="editor-container">
+          <div class="editor-tabs">
+            <div class="editor-tab active" data-file="index.js">
+              index.js
+              <div class="editor-tab-close">×</div>
+            </div>
+            <div class="editor-tab" data-file="quantum.js">
+              quantum.js
+              <div class="editor-tab-close">×</div>
+            </div>
+            <div class="editor-tab" data-file="neural.js">
+              neural.js
+              <div class="editor-tab-close">×</div>
+            </div>
+          </div>
+          <div class="editor-content">
+            <div class="line-numbers" id="line-numbers"></div>
+            <textarea id="code-area" class="code-area" spellcheck="false">/**
+ * NeuroFusionOS Quantum Neural Core
+ * Advanced hybrid processing system with quantum-inspired algorithms
+ */
+
+// Initialize the quantum neural network
+function initQuantumNeuralNetwork() {
+  const config = {
+    qubits: 8,
+    layers: 3,
+    learningRate: 0.015,
+    activationFunction: 'quantum_sigmoid'
+  };
+  
+  console.log('Initializing Quantum Neural Network...');
+  
+  // Create quantum circuit
+  const circuit = createQuantumCircuit(config.qubits);
+  
+  // Apply Hadamard gates to create superposition
+  for (let i = 0; i < config.qubits; i++) {
+    applyHadamard(circuit, i);
+  }
+  
+  // Create entanglement between qubits
+  for (let i = 0; i < config.qubits - 1; i++) {
+    applyCNOT(circuit, i, i + 1);
+  }
+  
+  // Initialize neural layers with quantum properties
+  const neuralLayers = [];
+  for (let i = 0; i < config.layers; i++) {
+    neuralLayers.push(createQuantumLayer(config.qubits, config.activationFunction));
+  }
+  
+  return {
+    circuit,
+    neuralLayers,
+    config
+  };
+}
+
+// Create a quantum circuit with specified number of qubits
+function createQuantumCircuit(numQubits) {
+  const circuit = {
+    qubits: [],
+    gates: []
+  };
+  
+  // Initialize qubits in |0⟩ state
+  for (let i = 0; i < numQubits; i++) {
+    circuit.qubits.push({
+      id: `q${i}`,
+      state: [1, 0], // |0⟩ state as [alpha, beta] where |ψ⟩ = α|0⟩ + β|1⟩
+      position: i
+    });
+  }
+  
+  return circuit;
+}
+
+// Apply Hadamard gate to create superposition
+function applyHadamard(circuit, qubitIndex) {
+  const hadamardMatrix = [
+    [1/Math.sqrt(2), 1/Math.sqrt(2)],
+    [1/Math.sqrt(2), -1/Math.sqrt(2)]
+  ];
+  
+  // Store gate operation in circuit
+  circuit.gates.push({
+    type: 'H',
+    target: qubitIndex,
+    matrix: hadamardMatrix
+  });
+  
+  // Update qubit state
+  const qubit = circuit.qubits[qubitIndex];
+  const alpha = qubit.state[0];
+  const beta = qubit.state[1];
+  
+  // Apply hadamard transform
+  qubit.state[0] = (hadamardMatrix[0][0] * alpha) + (hadamardMatrix[0][1] * beta);
+  qubit.state[1] = (hadamardMatrix[1][0] * alpha) + (hadamardMatrix[1][1] * beta);
+}
+
+// Apply CNOT gate to create entanglement
+function applyCNOT(circuit, controlIndex, targetIndex) {
+  // Store gate operation in circuit
+  circuit.gates.push({
+    type: 'CNOT',
+    control: controlIndex,
+    target: targetIndex
+  });
+  
+  // In a real quantum system, this would perform the actual operation
+  // This is a simplified representation
+}
+
+// Create a quantum-inspired neural network layer
+function createQuantumLayer(size, activationFunction) {
+  const weights = [];
+  const biases = [];
+  
+  // Initialize weights with random values
+  for (let i = 0; i < size; i++) {
+    const neuronWeights = [];
+    for (let j = 0; j < size; j++) {
+      neuronWeights.push(Math.random() * 2 - 1);
+    }
+    weights.push(neuronWeights);
+    biases.push(Math.random() * 0.2 - 0.1);
+  }
+  
+  return {
+    size,
+    weights,
+    biases,
+    activationFunction
+  };
+}
+
+// Process input through the quantum neural network
+function processInput(qnn, input) {
+  // Encode classical input into quantum state
+  encodeInput(qnn.circuit, input);
+  
+  // Apply quantum operations
+  applyQuantumOperations(qnn.circuit);
+  
+  // Process through neural layers
+  let layerInput = measureQuantumState(qnn.circuit);
+  
+  // Forward propagation through neural layers
+  for (let i = 0; i < qnn.neuralLayers.length; i++) {
+    layerInput = forwardLayer(qnn.neuralLayers[i], layerInput);
+  }
+  
+  return layerInput;
+}
+
+// Encode classical input into quantum state
+function encodeInput(circuit, input) {
+  // Ensure input length matches circuit size
+  const inputLength = Math.min(input.length, circuit.qubits.length);
+  
+  for (let i = 0; i < inputLength; i++) {
+    // Simple amplitude encoding
+    const angle = input[i] * Math.PI / 2;
+    circuit.qubits[i].state[0] = Math.cos(angle);
+    circuit.qubits[i].state[1] = Math.sin(angle);
+  }
+}
+
+// Apply quantum operations on the circuit
+function applyQuantumOperations(circuit) {
+  // In a real quantum system, this would perform all gate operations
+  // This is a simplified representation for the simulation
+  
+  // Apply a random phase shift to simulate quantum behavior
+  for (let i = 0; i < circuit.qubits.length; i++) {
+    const phase = Math.random() * Math.PI * 2;
+    circuit.qubits[i].state[1] *= Math.exp(1i * phase);
+  }
+}
+
+// Measure quantum state to get classical values
+function measureQuantumState(circuit) {
+  const result = [];
+  
+  for (let i = 0; i < circuit.qubits.length; i++) {
+    const qubit = circuit.qubits[i];
+    // Probability of measuring |1⟩ is |β|²
+    const probOne = Math.pow(Math.abs(qubit.state[1]), 2);
+    
+    // Classical value as expectation: 0 * (1-p) + 1 * p = p
+    result.push(probOne);
+  }
+  
+  return result;
+}
+
+// Process input through a neural layer
+function forwardLayer(layer, input) {
+  const output = [];
+  
+  for (let i = 0; i < layer.size; i++) {
+    let sum = layer.biases[i];
+    
+    for (let j = 0; j < input.length; j++) {
+      sum += layer.weights[i][j] * input[j];
+    }
+    
+    // Apply activation function
+    output.push(activationFunction(sum, layer.activationFunction));
+  }
+  
+  return output;
+}
+
+// Activation function selector
+function activationFunction(x, type) {
+  switch (type) {
+    case 'quantum_sigmoid':
+      return 1 / (1 + Math.exp(-x)) + 0.15 * Math.sin(x * 3);
+    case 'quantum_tanh':
+      return Math.tanh(x) + 0.1 * Math.sin(x * 5);
+    case 'quantum_relu':
+      return Math.max(0, x) + (x > 0 ? 0.05 * Math.sin(x * 2) : 0);
+    default:
+      return 1 / (1 + Math.exp(-x));
+  }
+}
+
+// Main function to demonstrate the quantum neural network
+function main() {
+  console.log('Starting NeuroFusionOS Quantum Neural Core...');
+  
+  // Initialize the quantum neural network
+  const qnn = initQuantumNeuralNetwork();
+  
+  // Sample input data
+  const inputData = [0.5, 0.3, 0.8, 0.2, 0.7, 0.4, 0.6, 0.1];
+  
+  // Process input through the network
+  const output = processInput(qnn, inputData);
+  
+  console.log('Quantum Neural Network Output:', output);
+  
+  // Calculate network entropy
+  const entropy = calculateEntropy(output);
+  console.log('Network Entropy:', entropy);
+  
+  return {
+    qnn,
+    output,
+    entropy
+  };
+}
+
+// Calculate entropy of the network output
+function calculateEntropy(output) {
+  let entropy = 0;
+  
+  for (let i = 0; i < output.length; i++) {
+    if (output[i] > 0) {
+      entropy -= output[i] * Math.log2(output[i]);
+    }
+  }
+  
+  return entropy;
+}
+
+// Execute the main function
+const result = main();
+console.log('Execution completed successfully.');</textarea>
+            <div class="editor-overlay" id="code-animation-overlay"></div>
+          </div>
+        </div>
+        
+        <div class="visualization-overlay" id="visualization-overlay"></div>
+      </div>
+    </section>
+    
+    <section class="panel right-panel">
+      <div class="section-title">CODE SNIPPETS</div>
+      <div class="snippets-list" id="snippets-list">
+        <div class="snippet-item" data-snippet="quantum-function">
+          <div class="snippet-name">Quantum Function</div>
+          <div class="snippet-preview">function simulateQuantumAlgorithm(qubits, gates) {
+  // Set up quantum register with qubits
+  const register = createQuantumRegister(qubits);
+}</div>
+        </div>
+        
+        <div class="snippet-item" data-snippet="neural-network">
+          <div class="snippet-name">Neural Network Layer</div>
+          <div class="snippet-preview">class NeuralLayer {
+  constructor(inputSize, outputSize) {
+    this.weights = Matrix.random(outputSize, inputSize);
+    this.biases = Matrix.random(outputSize, 1);
+  }
+}</div>
+        </div>
+        
+        <div class="snippet-item" data-snippet="matrix-operations">
+          <div class="snippet-name">Matrix Operations</div>
+          <div class="snippet-preview">class Matrix {
+  static multiply(a, b) {
+    if (a.cols !== b.rows) {
+      throw new Error('Matrix dimensions do not match');
+    }
+    
+    const result = new Matrix(a.rows, b.cols);
+    // Matrix multiplication logic
+  }
+}</div>
+        </div>
+        
+        <div class="snippet-item" data-snippet="quantum-gate">
+          <div class="snippet-name">Quantum Gate</div>
+          <div class="snippet-preview">function applyHadamardGate(qubit) {
+  const hadamard = [
+    [1/Math.sqrt(2), 1/Math.sqrt(2)], 
+    [1/Math.sqrt(2), -1/Math.sqrt(2)]
+  ];
+  return multiplyMatrixVector(hadamard, qubit);
+}</div>
+        </div>
+      </div>
+      
+      <div class="section-title" style="margin-top: 20px;">EXECUTION STATS</div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value" id="exec-time">32ms</div>
+          <div class="stat-label">Execution Time</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="memory-usage">4.2MB</div>
+          <div class="stat-label">Memory Usage</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="quantum-ops">128</div>
+          <div class="stat-label">Quantum Ops</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="complexity">O(n²)</div>
+          <div class="stat-label">Complexity</div>
+        </div>
+      </div>
+      
+      <div class="warning-message">
+        Note: Quantum operations are simulated. To connect to a real quantum processor, additional configuration is required.
+      </div>
+    </section>
+    
+    <footer class="panel footer">
+      <div class="footer-logo">NeuroFusionOS</div>
+      
+      <div class="transport-controls">
+        <div class="transport-button" id="reset-button">⟲</div>
+        <div class="transport-button primary" id="play-button">▶</div>
+        <div class="transport-button" id="export-button">⬇</div>
+      </div>
+      
+      <div class="footer-info">Visualization engine powered by Three.js</div>
+    </footer>
+  </div>
+  
+  <script>
+    // Global variables for the editor and animation
+    let currentTheme = 'cyberpunk';
+    let currentPreset = 'flow';
+    let particleSize = 3;
+    let particleDensity = 8;
+    let animationSpeed = 1.5;
+    let glowIntensity = 5;
+    let activeFile = 'index.js';
+    let isAnimating = false;
+    let particles = [];
+    let lineHighlights = [];
+    let blockHighlights = [];
+    let scene, camera, renderer, composer;
+    let codeObjects = [];
+    
+    // Current code content
+    const codeFiles = {
+      'index.js': document.getElementById('code-area').value,
+      'quantum.js': `/**
+ * Quantum Simulation Module
+ * Provides quantum computing primitives and algorithms
+ */
+
+// Define complex number operations
+class Complex {
+  constructor(real, imag = 0) {
+    this.real = real;
+    this.imag = imag;
+  }
+  
+  static add(a, b) {
+    return new Complex(a.real + b.real, a.imag + b.imag);
+  }
+  
+  static multiply(a, b) {
+    return new Complex(
+      a.real * b.real - a.imag * b.imag,
+      a.real * b.imag + a.imag * b.real
+    );
+  }
+  
+  static conjugate(a) {
+    return new Complex(a.real, -a.imag);
+  }
+  
+  magnitude() {
+    return Math.sqrt(this.real * this.real + this.imag * this.imag);
+  }
+  
+  phase() {
+    return Math.atan2(this.imag, this.real);
+  }
+}
+
+// Quantum state vector representation
+class QuantumState {
+  constructor(numQubits) {
+    this.numQubits = numQubits;
+    this.size = Math.pow(2, numQubits);
+    this.amplitudes = new Array(this.size).fill().map(() => new Complex(0));
+    
+    // Initialize to |0...0⟩ state
+    this.amplitudes[0] = new Complex(1);
+  }
+  
+  // Get probability of measuring specific state
+  getProbability(stateIndex) {
+    const amplitude = this.amplitudes[stateIndex];
+    return amplitude.magnitude() * amplitude.magnitude();
+  }
+  
+  // Normalize the state vector
+  normalize() {
+    let sum = 0;
+    for (let i = 0; i < this.size; i++) {
+      sum += this.getProbability(i);
+    }
+    
+    const normFactor = 1 / Math.sqrt(sum);
+    for (let i = 0; i < this.size; i++) {
+      this.amplitudes[i].real *= normFactor;
+      this.amplitudes[i].imag *= normFactor;
+    }
+  }
+}
+
+// Single-qubit gate implementation
+function applySingleQubitGate(state, gate, targetQubit) {
+  const n = state.numQubits;
+  const newState = new QuantumState(n);
+  
+  // For each basis state
+  for (let i = 0; i < state.size; i++) {
+    // Check if target qubit is 0 or 1 in this basis state
+    const targetBit = (i >> targetQubit) & 1;
+    
+    // Calculate the index with target bit flipped
+    const flippedIndex = i ^ (1 << targetQubit);
+    
+    // For bit = 0, apply gate[0][0] and gate[0][1]
+    // For bit = 1, apply gate[1][0] and gate[1][1]
+    if (targetBit === 0) {
+      // Apply gate[0][0] * |current⟩ + gate[0][1] * |flipped⟩
+      newState.amplitudes[i] = Complex.add(
+        Complex.multiply(gate[0][0], state.amplitudes[i]),
+        Complex.multiply(gate[0][1], state.amplitudes[flippedIndex])
+      );
+    } else {
+      // Apply gate[1][0] * |flipped⟩ + gate[1][1] * |current⟩
+      newState.amplitudes[i] = Complex.add(
+        Complex.multiply(gate[1][0], state.amplitudes[flippedIndex]),
+        Complex.multiply(gate[1][1], state.amplitudes[i])
+      );
+    }
+  }
+  
+  // Normalize the resulting state
+  newState.normalize();
+  return newState;
+}
+
+// Apply Hadamard gate to create superposition
+function applyHadamard(state, targetQubit) {
+  const hadamard = [
+    [new Complex(1/Math.sqrt(2)), new Complex(1/Math.sqrt(2))],
+    [new Complex(1/Math.sqrt(2)), new Complex(-1/Math.sqrt(2))]
+  ];
+  
+  return applySingleQubitGate(state, hadamard, targetQubit);
+}
+
+// Apply Pauli-X gate (quantum NOT gate)
+function applyPauliX(state, targetQubit) {
+  const pauliX = [
+    [new Complex(0), new Complex(1)],
+    [new Complex(1), new Complex(0)]
+  ];
+  
+  return applySingleQubitGate(state, pauliX, targetQubit);
+}
+
+// Apply Pauli-Z gate (phase flip)
+function applyPauliZ(state, targetQubit) {
+  const pauliZ = [
+    [new Complex(1), new Complex(0)],
+    [new Complex(0), new Complex(-1)]
+  ];
+  
+  return applySingleQubitGate(state, pauliZ, targetQubit);
+}
+
+// Apply controlled-NOT gate for entanglement
+function applyCNOT(state, controlQubit, targetQubit) {
+  const n = state.numQubits;
+  const newState = new QuantumState(n);
+  
+  // Initialize with zeros
+  for (let i = 0; i < state.size; i++) {
+    newState.amplitudes[i] = new Complex(0);
+  }
+  
+  // For each basis state
+  for (let i = 0; i < state.size; i++) {
+    // Check if control qubit is 1
+    const controlBit = (i >> controlQubit) & 1;
+    
+    if (controlBit === 0) {
+      // If control is 0, do nothing
+      newState.amplitudes[i] = state.amplitudes[i];
+    } else {
+      // If control is 1, flip the target qubit
+      const flippedIndex = i ^ (1 << targetQubit);
+      newState.amplitudes[flippedIndex] = state.amplitudes[i];
+    }
+  }
+  
+  return newState;
+}
+
+// Measure a quantum state
+function measureQubits(state, qubitsToMeasure = null) {
+  if (!qubitsToMeasure) {
+    // Measure all qubits
+    qubitsToMeasure = Array.from({ length: state.numQubits }, (_, i) => i);
+  }
+  
+  // Generate random number for measurement
+  const rand = Math.random();
+  let cumulativeProb = 0;
+  
+  // Determine the outcome based on probabilities
+  for (let i = 0; i < state.size; i++) {
+    cumulativeProb += state.getProbability(i);
+    if (rand < cumulativeProb) {
+      // Determine the measured values for requested qubits
+      const results = {};
+      qubitsToMeasure.forEach(qubit => {
+        results[qubit] = (i >> qubit) & 1;
+      });
+      
+      // Collapse the state
+      const newState = new QuantumState(state.numQubits);
+      newState.amplitudes[i] = new Complex(1);
+      
+      return {
+        results,
+        newState
+      };
+    }
+  }
+  
+  // Should never reach here if probabilities sum to 1
+  throw new Error("Measurement failed: Probabilities don't sum to 1");
+}
+
+// Run a simple quantum algorithm (Quantum Fourier Transform)
+function quantumFourierTransform(numQubits) {
+  // Initialize quantum state
+  let state = new QuantumState(numQubits);
+  
+  // Apply Hadamard to all qubits to create uniform superposition
+  for (let i = 0; i < numQubits; i++) {
+    state = applyHadamard(state, i);
+  }
+  
+  // Apply phase rotations
+  for (let i = 0; i < numQubits; i++) {
+    for (let j = i + 1; j < numQubits; j++) {
+      // Apply controlled phase rotation
+      // In a real implementation, we would use a controlled phase gate
+      // Here we'll just simulate the effect
+      const phaseShift = Math.PI / Math.pow(2, j - i);
+      state = applyControlledPhase(state, i, j, phaseShift);
+    }
+  }
+  
+  // Swap qubits to complete QFT
+  for (let i = 0; i < Math.floor(numQubits / 2); i++) {
+    state = swapQubits(state, i, numQubits - i - 1);
+  }
+  
+  return state;
+}
+
+// Apply controlled phase rotation
+function applyControlledPhase(state, controlQubit, targetQubit, phaseAngle) {
+  const n = state.numQubits;
+  const newState = new QuantumState(n);
+  
+  // Copy amplitudes
+  for (let i = 0; i < state.size; i++) {
+    newState.amplitudes[i] = new Complex(
+      state.amplitudes[i].real,
+      state.amplitudes[i].imag
+    );
+  }
+  
+  // Apply phase shift conditionally
+  for (let i = 0; i < state.size; i++) {
+    const controlBit = (i >> controlQubit) & 1;
+    const targetBit = (i >> targetQubit) & 1;
+    
+    if (controlBit === 1 && targetBit === 1) {
+      // Apply phase shift e^(i * phaseAngle)
+      const phase = new Complex(
+        Math.cos(phaseAngle),
+        Math.sin(phaseAngle)
+      );
+      newState.amplitudes[i] = Complex.multiply(
+        newState.amplitudes[i],
+        phase
+      );
+    }
+  }
+  
+  return newState;
+}
+
+// Swap two qubits in the state vector
+function swapQubits(state, qubit1, qubit2) {
+  const n = state.numQubits;
+  const newState = new QuantumState(n);
+  
+  // For each basis state
+  for (let i = 0; i < state.size; i++) {
+    // Extract bit values
+    const bit1 = (i >> qubit1) & 1;
+    const bit2 = (i >> qubit2) & 1;
+    
+    if (bit1 === bit2) {
+      // If bits are the same, no change needed
+      newState.amplitudes[i] = state.amplitudes[i];
+    } else {
+      // If bits differ, need to swap
+      const swappedIndex = i ^ (1 << qubit1) ^ (1 << qubit2);
+      newState.amplitudes[swappedIndex] = state.amplitudes[i];
+    }
+  }
+  
+  return newState;
+}
+
+// Export the quantum module functions
+module.exports = {
+  Complex,
+  QuantumState,
+  applyHadamard,
+  applyPauliX,
+  applyPauliZ,
+  applyCNOT,
+  measureQubits,
+  quantumFourierTransform
+};`,
+      'neural.js': `/**
+ * Neural Network Module
+ * Implements a neural network with quantum-inspired features
+ */
+
+// Matrix operations for neural computations
+class Matrix {
+  constructor(rows, cols) {
+    this.rows = rows;
+    this.cols = cols;
+    this.data = Array(rows).fill().map(() => Array(cols).fill(0));
+  }
+  
+  // Create a matrix with random values
+  static random(rows, cols) {
+    const matrix = new Matrix(rows, cols);
+    matrix.map(() => Math.random() * 2 - 1);
+    return matrix;
+  }
+  
+  // Matrix multiplication
+  static multiply(a, b) {
+    if (a.cols !== b.rows) {
+      throw new Error('Columns of A must match rows of B.');
+    }
+    
+    const result = new Matrix(a.rows, b.cols);
+    
+    for (let i = 0; i < result.rows; i++) {
+      for (let j = 0; j < result.cols; j++) {
+        // Dot product of values in col
+        let sum = 0;
+        for (let k = 0; k < a.cols; k++) {
+          sum += a.data[i][k] * b.data[k][j];
+        }
+        result.data[i][j] = sum;
+      }
+    }
+    
+    return result;
+  }
+  
+  // Hadamard product (element-wise multiplication)
+  static hadamard(a, b) {
+    if (a.rows !== b.rows || a.cols !== b.cols) {
+      throw new Error('Dimensions must match for Hadamard product');
+    }
+    
+    const result = new Matrix(a.rows, a.cols);
+    
+    for (let i = 0; i < a.rows; i++) {
+      for (let j = 0; j < a.cols; j++) {
+        result.data[i][j] = a.data[i][j] * b.data[i][j];
+      }
+    }
+    
+    return result;
+  }
+  
+  // Add two matrices
+  static add(a, b) {
+    if (a.rows !== b.rows || a.cols !== b.cols) {
+      throw new Error('Dimensions must match for addition');
+    }
+    
+    const result = new Matrix(a.rows, a.cols);
+    
+    for (let i = 0; i < a.rows; i++) {
+      for (let j = 0; j < a.cols; j++) {
+        result.data[i][j] = a.data[i][j] + b.data[i][j];
+      }
+    }
+    
+    return result;
+  }
+  
+  // Subtract matrix b from a
+  static subtract(a, b) {
+    if (a.rows !== b.rows || a.cols !== b.cols) {
+      throw new Error('Dimensions must match for subtraction');
+    }
+    
+    const result = new Matrix(a.rows, a.cols);
+    
+    for (let i = 0; i < a.rows; i++) {
+      for (let j = 0; j < a.cols; j++) {
+        result.data[i][j] = a.data[i][j] - b.data[i][j];
+      }
+    }
+    
+    return result;
+  }
+  
+  // Transform matrix into a 1d array
+  toArray() {
+    const arr = [];
+    
+    for (let i = 0; i < this.rows; i++) {
+      for (let j = 0; j < this.cols; j++) {
+        arr.push(this.data[i][j]);
+      }
+    }
+    
+    return arr;
+  }
+  
+  // Create matrix from array
+  static fromArray(arr) {
+    const matrix = new Matrix(arr.length, 1);
+    
+    for (let i = 0; i < arr.length; i++) {
+      matrix.data[i][0] = arr[i];
+    }
+    
+    return matrix;
+  }
+  
+  // Apply a function to every element of matrix
+  map(func) {
+    for (let i = 0; i < this.rows; i++) {
+      for (let j = 0; j < this.cols; j++) {
+        const val = this.data[i][j];
+        this.data[i][j] = func(val, i, j);
+      }
+    }
+    
+    return this;
+  }
+  
+  // Create a copy of the matrix
+  copy() {
+    const matrix = new Matrix(this.rows, this.cols);
+    
+    for (let i = 0; i < this.rows; i++) {
+      for (let j = 0; j < this.cols; j++) {
+        matrix.data[i][j] = this.data[i][j];
+      }
+    }
+    
+    return matrix;
+  }
+}
+
+// Activation functions
+const activation = {
+  // Standard sigmoid
+  sigmoid: x => 1 / (1 + Math.exp(-x)),
+  
+  // Derivative of sigmoid
+  dsigmoid: y => y * (1 - y),
+  
+  // ReLU activation
+  relu: x => Math.max(0, x),
+  
+  // Derivative of ReLU
+  drelu: y => y > 0 ? 1 : 0,
+  
+  // Tanh activation
+  tanh: x => Math.tanh(x),
+  
+  // Derivative of tanh
+  dtanh: y => 1 - (y * y),
+  
+  // Quantum-inspired sigmoid with oscillatory component
+  quantumSigmoid: x => 1 / (1 + Math.exp(-x)) + 0.1 * Math.sin(x * 3),
+  
+  // Derivative of quantum sigmoid (approximated)
+  dquantumSigmoid: y => {
+    // Extract base sigmoid value (approximate)
+    const baseY = y - 0.1 * Math.sin((Math.log(1 / y - 1) * -1) * 3);
+    return baseY * (1 - baseY) + 0.3 * Math.cos((Math.log(1 / y - 1) * -1) * 3);
+  }
+};
+
+// Neural Network with quantum-inspired features
+class QuantumNeuralNetwork {
+  constructor(inputNodes, hiddenNodes, outputNodes) {
+    this.inputNodes = inputNodes;
+    this.hiddenNodes = hiddenNodes;
+    this.outputNodes = outputNodes;
+    
+    // Initialize weights between input and hidden layer
+    this.weightsIH = Matrix.random(this.hiddenNodes, this.inputNodes);
+    // Initialize weights between hidden and output layer
+    this.weightsHO = Matrix.random(this.outputNodes, this.hiddenNodes);
+    
+    // Initialize biases
+    this.biasH = Matrix.random(this.hiddenNodes, 1);
+    this.biasO = Matrix.random(this.outputNodes, 1);
+    
+    // Set learning rate
+    this.learningRate = 0.1;
+    
+    // Choose activation function
+    this.activation = activation.quantumSigmoid;
+    this.derivative = activation.dquantumSigmoid;
+    
+    // Add quantum noise to enhance learning
+    this.quantumNoiseLevel = 0.01;
+    
+    // Track training iterations for quantum-inspired periodic adjustments
+    this.iterations = 0;
+  }
+  
+  // Feed forward through the network
+  feedForward(inputArray) {
+    // Convert input array to matrix
+    const inputs = Matrix.fromArray(inputArray);
+    
+    // Calculate hidden layer values
+    const hidden = Matrix.multiply(this.weightsIH, inputs);
+    hidden.add(this.biasH);
+    // Apply activation function
+    hidden.map(this.activation);
+    
+    // Calculate output layer values
+    const outputs = Matrix.multiply(this.weightsHO, hidden);
+    outputs.add(this.biasO);
+    outputs.map(this.activation);
+    
+    // Add quantum-inspired noise to outputs based on cycle
+    if (this.quantumNoiseLevel > 0) {
+      const phaseShift = Math.sin(this.iterations * 0.01) * this.quantumNoiseLevel;
+      outputs.map(x => x + (Math.random() * 2 - 1) * phaseShift);
+    }
+    
+    // Return the output as an array
+    return outputs.toArray();
+  }
+  
+  // Train the network with backpropagation
+  train(inputArray, targetArray) {
+    // Increment iterations counter
+    this.iterations++;
+    
+    // Feed forward
+    const inputs = Matrix.fromArray(inputArray);
+    
+    // Hidden layer
+    const hidden = Matrix.multiply(this.weightsIH, inputs);
+    hidden.add(this.biasH);
+    hidden.map(this.activation);
+    
+    // Output layer
+    const outputs = Matrix.multiply(this.weightsHO, hidden);
+    outputs.add(this.biasO);
+    outputs.map(this.activation);
+    
+    // Convert target array to matrix
+    const targets = Matrix.fromArray(targetArray);
+    
+    // Calculate output layer errors
+    const outputErrors = Matrix.subtract(targets, outputs);
+    
+    // Calculate output layer gradients
+    const outputGradients = Matrix.map(outputs, this.derivative);
+    outputGradients.multiply(outputErrors);
+    outputGradients.multiply(this.learningRate);
+    
+    // Calculate hidden to output deltas
+    const hiddenT = Matrix.transpose(hidden);
+    const weightsHO_deltas = Matrix.multiply(outputGradients, hiddenT);
+    
+    // Adjust weights and biases
+    this.weightsHO.add(weightsHO_deltas);
+    this.biasO.add(outputGradients);
+    
+    // Calculate hidden layer errors
+    const weightsHOT = Matrix.transpose(this.weightsHO);
+    const hiddenErrors = Matrix.multiply(weightsHOT, outputErrors);
+    
+    // Calculate hidden layer gradients
+    const hiddenGradients = Matrix.map(hidden, this.derivative);
+    hiddenGradients.multiply(hiddenErrors);
+    hiddenGradients.multiply(this.learningRate);
+    
+    // Calculate input to hidden deltas
+    const inputsT = Matrix.transpose(inputs);
+    const weightsIH_deltas = Matrix.multiply(hiddenGradients, inputsT);
+    
+    // Adjust weights and biases
+    this.weightsIH.add(weightsIH_deltas);
+    this.biasH.add(hiddenGradients);
+    
+    // Apply quantum-inspired phase adjustments
+    if (this.iterations % 100 === 0) {
+      this.applyQuantumPhaseAdjustment();
+    }
+  }
+  
+  // Apply quantum-inspired phase adjustment to weights
+  applyQuantumPhaseAdjustment() {
+    const phaseShift = Math.sin(this.iterations * 0.01) * 0.1;
+    
+    // Apply to input-hidden weights
+    this.weightsIH.map(w => w * (1 + phaseShift * (Math.random() - 0.5)));
+    
+    // Apply to hidden-output weights
+    this.weightsHO.map(w => w * (1 + phaseShift * (Math.random() - 0.5)));
+  }
+  
+  // Measure network state (collapse quantum-like probabilities)
+  measure() {
+    // In a quantum-inspired model, this would more directly
+    // represent a measurement-like operation
+    return {
+      weights: {
+        inputHidden: this.weightsIH.copy(),
+        hiddenOutput: this.weightsHO.copy()
+      },
+      biases: {
+        hidden: this.biasH.copy(),
+        output: this.biasO.copy()
+      },
+      entropy: this.calculateNetworkEntropy()
+    };
+  }
+  
+  // Calculate a measure of entropy in the network
+  calculateNetworkEntropy() {
+    let sum = 0;
+    let count = 0;
+    
+    // Sample weights from both layers
+    const sampleWeights = [
+      ...this.weightsIH.toArray().slice(0, 10),
+      ...this.weightsHO.toArray().slice(0, 10)
+    ];
+    
+    // Normalize to (0,1) range for entropy calculation
+    const normalized = sampleWeights.map(w => {
+      const norm = (Math.tanh(w) + 1) / 2;
+      return norm;
+    });
+    
+    // Calculate Shannon entropy
+    for (const p of normalized) {
+      if (p > 0 && p < 1) {
+        sum -= p * Math.log2(p) + (1 - p) * Math.log2(1 - p);
+        count++;
+      }
+    }
+    
+    return count > 0 ? sum / count : 0;
+  }
+}
+
+// Export the neural network module
+module.exports = {
+  Matrix,
+  activation,
+  QuantumNeuralNetwork
+};`
+    };
+    
+    // Initialize everything
+    document.addEventListener('DOMContentLoaded', () => {
+      initCodeArea();
+      initEditorTabs();
+      initButtons();
+      initControls();
+      initSnippets();
+      initThreeJS();
+      generateLineNumbers();
+      applySyntaxHighlighting();
+      
+      // Set animation frame
+      requestAnimationFrame(animate);
+    });
+    
+    // Initialize code editor area
+    function initCodeArea() {
+      const codeArea = document.getElementById('code-area');
+      
+      // Handle tab key
+      codeArea.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          
+          // Insert 2 spaces at cursor position
+          const start = codeArea.selectionStart;
+          const end = codeArea.selectionEnd;
+          
+          codeArea.value = codeArea.value.substring(0, start) + '  ' + codeArea.value.substring(end);
+          
+          // Move cursor after the inserted tab
+          codeArea.selectionStart = codeArea.selectionEnd = start + 2;
+        }
+      });
+      
+      // Update line numbers and syntax highlighting on input
+      codeArea.addEventListener('input', () => {
+        // Save content to current file
+        codeFiles[activeFile] = codeArea.value;
+        
+        // Update UI
+        generateLineNumbers();
+        applySyntaxHighlighting();
+      });
+      
+      // Handle scrolling to keep line numbers in sync
+      codeArea.addEventListener('scroll', () => {
+        document.getElementById('line-numbers').style.top = (15 - codeArea.scrollTop) + 'px';
+      });
+    }
+    
+    // Initialize editor tabs
+    function initEditorTabs() {
+      const tabs = document.querySelectorAll('.editor-tab');
+      
+      tabs.forEach(tab => {
+        // Tab click changes active file
+        tab.addEventListener('click', (e) => {
+          if (e.target.classList.contains('editor-tab-close')) {
+            // Don't switch tabs if close button clicked
+            return;
+          }
+          
+          // Deactivate all tabs
+          tabs.forEach(t => t.classList.remove('active'));
+          
+          // Activate this tab
+          tab.classList.add('active');
+          
+          // Load file content
+          activeFile = tab.getAttribute('data-file');
+          document.getElementById('code-area').value = codeFiles[activeFile];
+          
+          // Update line numbers and highlighting
+          generateLineNumbers();
+          applySyntaxHighlighting();
+        });
+        
+        // Close button removes tab
+        const closeButton = tab.querySelector('.editor-tab-close');
+        closeButton.addEventListener('click', (e) => {
+          e.stopPropagation();
+          
+          // Don't close the last tab
+          if (document.querySelectorAll('.editor-tab').length <= 1) {
+            return;
+          }
+          
+          // If closing active tab, switch to another tab
+          if (tab.classList.contains('active')) {
+            const otherTab = tab.previousElementSibling || tab.nextElementSibling;
+            otherTab.classList.add('active');
+            activeFile = otherTab.getAttribute('data-file');
+            document.getElementById('code-area').value = codeFiles[activeFile];
+          }
+          
+          // Remove the tab
+          tab.remove();
+          
+          // Update editor
+          generateLineNumbers();
+          applySyntaxHighlighting();
+        });
+      });
+    }
+    
+    // Initialize buttons
+    function initButtons() {
+      // Play button
+      document.getElementById('play-button').addEventListener('click', toggleAnimation);
+      
+      // Reset button
+      document.getElementById('reset-button').addEventListener('click', resetAnimation);
+      
+      // Export button
+      document.getElementById('export-button').addEventListener('click', exportAnimation);
+      
+      // Theme options
+      const themeOptions = document.querySelectorAll('.theme-option');
+      themeOptions.forEach(option => {
+        option.addEventListener('click', () => {
+          themeOptions.forEach(o => o.classList.remove('active'));
+          option.classList.add('active');
+          currentTheme = option.getAttribute('data-theme');
+          applyTheme();
+        });
+      });
+      
+      // Animation presets
+      const presetButtons = document.querySelectorAll('.preset-button');
+      presetButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          presetButtons.forEach(b => b.classList.remove('active'));
+          button.classList.add('active');
+          currentPreset = button.getAttribute('data-preset');
+          applyPreset();
+        });
+      });
+    }
+    
+    // Initialize controls
+    function initControls() {
+      // Sliders
+      const sliders = [
+        { id: 'animation-speed', valueId: 'speed-value', callback: value => animationSpeed = parseFloat(value) },
+        { id: 'particle-size', valueId: 'size-value', callback: value => particleSize = parseInt(value) },
+        { id: 'particle-density', valueId: 'density-value', callback: value => particleDensity = parseInt(value) },
+        { id: 'glow-intensity', valueId: 'glow-value', callback: value => glowIntensity = parseInt(value) }
+      ];
+      
+      sliders.forEach(slider => {
+        const element = document.getElementById(slider.id);
+        const valueElement = document.getElementById(slider.valueId);
+        
+        // Set initial value
+        valueElement.textContent = element.value;
+        slider.callback(element.value);
+        
+        // Update on change
+        element.addEventListener('input', () => {
+          valueElement.textContent = element.value;
+          slider.callback(element.value);
+        });
+      });
+      
+      // Toggle buttons
+      const toggleButtons = document.querySelectorAll('.toggle-button');
+      toggleButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          button.classList.toggle('active');
+        });
+      });
+    }
+    
+    // Initialize snippets
+    function initSnippets() {
+      const snippets = document.querySelectorAll('.snippet-item');
+      
+      snippets.forEach(snippet => {
+        snippet.addEventListener('click', () => {
+          const snippetId = snippet.getAttribute('data-snippet');
+          insertSnippet(snippetId);
+        });
+      });
+    }
+    
+    // Generate line numbers
+    function generateLineNumbers() {
+      const codeArea = document.getElementById('code-area');
+      const lineNumbers = document.getElementById('line-numbers');
+      
+      const lines = codeArea.value.split('\n');
+      let html = '';
+      
+      for (let i = 1; i <= lines.length; i++) {
+        html += i + '<br>';
+      }
+      
+      lineNumbers.innerHTML = html;
+    }
+    
+    // Apply syntax highlighting
+    function applySyntaxHighlighting() {
+      const codeArea = document.getElementById('code-area');
+      const code = codeArea.value;
+      
+      // Tokenization is usually done with a proper parser
+      // This is a simplified approach for demonstration
+      
+      // Replace content with highlighted HTML
+      // In a real implementation, this would use a proper tokenizer
+      // We're using a textarea for the editor so we won't actually apply
+      // the HTML, but in a real editor we would.
+      // simpleHighlight(code);
+    }
+    
+    // Simple syntax highlighting function
+    function simpleHighlight(code) {
+      // This is just a placeholder for what would be a more complex syntax highlighter
+      // In a real implementation, you'd parse the code properly and apply CSS classes
+      
+      // For now, we'll just console log the code length as an indication
+      console.log(`Code length: ${code.length} characters`);
+    }
+    
+    // Insert a code snippet
+    function insertSnippet(snippetId) {
+      const codeArea = document.getElementById('code-area');
+      let snippet = '';
+      
+      // Each snippet has pre-defined content
+      switch (snippetId) {
+        case 'quantum-function':
+          snippet = `function simulateQuantumAlgorithm(qubits, gates) {
+  // Set up quantum register with qubits
+  const register = createQuantumRegister(qubits);
+  
+  // Apply gates in sequence
+  for (const gate of gates) {
+    applyQuantumGate(register, gate);
+  }
+  
+  // Return final quantum state
+  return measureQuantumState(register);
+}`;
+          break;
+          
+        case 'neural-network':
+          snippet = `class NeuralLayer {
+  constructor(inputSize, outputSize) {
+    this.weights = Matrix.random(outputSize, inputSize);
+    this.biases = Matrix.random(outputSize, 1);
+    this.activation = x => 1 / (1 + Math.exp(-x));
+  }
+  
+  forward(inputs) {
+    const outputs = Matrix.multiply(this.weights, inputs);
+    outputs.add(this.biases);
+    outputs.map(this.activation);
+    return outputs;
+  }
+}`;
+          break;
+          
+        case 'matrix-operations':
+          snippet = `class Matrix {
+  static multiply(a, b) {
+    if (a.cols !== b.rows) {
+      throw new Error('Matrix dimensions do not match');
+    }
+    
+    const result = new Matrix(a.rows, b.cols);
+    
+    for (let i = 0; i < a.rows; i++) {
+      for (let j = 0; j < b.cols; j++) {
+        let sum = 0;
+        for (let k = 0; k < a.cols; k++) {
+          sum += a.data[i][k] * b.data[k][j];
+        }
+        result.data[i][j] = sum;
+      }
+    }
+    
+    return result;
+  }
+}`;
+          break;
+          
+        case 'quantum-gate':
+          snippet = `function applyHadamardGate(qubit) {
+  const hadamard = [
+    [1/Math.sqrt(2), 1/Math.sqrt(2)], 
+    [1/Math.sqrt(2), -1/Math.sqrt(2)]
+  ];
+  
+  // Apply gate to transform qubit state
+  const alpha = qubit.state[0];
+  const beta = qubit.state[1];
+  
+  qubit.state[0] = hadamard[0][0] * alpha + hadamard[0][1] * beta;
+  qubit.state[1] = hadamard[1][0] * alpha + hadamard[1][1] * beta;
+  
+  return qubit;
+}`;
+          break;
+      }
+      
+      // Insert at cursor position
+      const start = codeArea.selectionStart;
+      const end = codeArea.selectionEnd;
+      
+      codeArea.value = codeArea.value.substring(0, start) + snippet + codeArea.value.substring(end);
+      
+      // Save to current file
+      codeFiles[activeFile] = codeArea.value;
+      
+      // Update line numbers and highlighting
+      generateLineNumbers();
+      applySyntaxHighlighting();
+    }
+    
+    // Initialize Three.js scene
+    function initThreeJS() {
+      const container = document.getElementById('visualization-overlay');
+      
+      // Scene
+      scene = new THREE.Scene();
+      
+      // Camera
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.z = 5;
+      
+      // Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setClearColor(0x000000, 0);
+      container.appendChild(renderer.domElement);
+      
+      // Post-processing for glow effects
+      composer = new THREE.EffectComposer(renderer);
+      const renderPass = new THREE.RenderPass(scene, camera);
+      composer.addPass(renderPass);
+      
+      const bloomPass = new THREE.UnrealBloomPass(
+        new THREE.Vector2(container.clientWidth, container.clientHeight),
+        1.5, // strength
+        0.4, // radius
+        0.85 // threshold
+      );
+      composer.addPass(bloomPass);
+      
+      // Handle window resize
+      window.addEventListener('resize', () => {
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        
+        renderer.setSize(width, height);
+        composer.setSize(width, height);
+      });
+    }
+    
+    // Apply the selected theme
+    function applyTheme() {
+      // Set CSS variables based on theme
+      const root = document.documentElement;
+      
+      switch (currentTheme) {
+        case 'cyberpunk':
+          root.style.setProperty('--primary-color', '#00f0ff');
+          root.style.setProperty('--secondary-color', '#7700ff');
+          root.style.setProperty('--accent-color', '#ff00aa');
+          break;
+          
+        case 'matrix':
+          root.style.setProperty('--primary-color', '#00ff41');
+          root.style.setProperty('--secondary-color', '#00aa00');
+          root.style.setProperty('--accent-color', '#008800');
+          break;
+          
+        case 'sunset':
+          root.style.setProperty('--primary-color', '#ff8a00');
+          root.style.setProperty('--secondary-color', '#da1b60');
+          root.style.setProperty('--accent-color', '#8823b5');
+          break;
+          
+        case 'midnight':
+          root.style.setProperty('--primary-color', '#00a1ff');
+          root.style.setProperty('--secondary-color', '#3636b3');
+          root.style.setProperty('--accent-color', '#4b0082');
+          break;
+          
+        case 'aurora':
+          root.style.setProperty('--primary-color', '#00ffa3');
+          root.style.setProperty('--secondary-color', '#00ffff');
+          root.style.setProperty('--accent-color', '#7700ff');
+          break;
+          
+        case 'cosmic':
+          root.style.setProperty('--primary-color', '#ff00cc');
+          root.style.setProperty('--secondary-color', '#5b00a7');
+          root.style.setProperty('--accent-color', '#b51c8f');
+          break;
+      }
+      
+      // Also update glow variables
+      root.style.setProperty('--glow-primary', `0 0 10px rgba(var(--primary-color), 0.7)`);
+      root.style.setProperty('--glow-secondary', `0 0 15px rgba(var(--secondary-color), 0.7)`);
+      root.style.setProperty('--glow-accent', `0 0 15px rgba(var(--accent-color), 0.7)`);
+    }
+    
+    // Apply the selected animation preset
+    function applyPreset() {
+      // This would update the animation style
+      console.log(`Applied ${currentPreset} animation preset`);
+      
+      // If animation is running, restart it
+      if (isAnimating) {
+        resetAnimation();
+        startAnimation();
+      }
+    }
+    
+    // Toggle animation on/off
+    function toggleAnimation() {
+      const playButton = document.getElementById('play-button');
+      
+      if (isAnimating) {
+        // Stop animation
+        isAnimating = false;
+        playButton.innerHTML = '▶';
+        stopAnimation();
+      } else {
+        // Start animation
+        isAnimating = true;
+        playButton.innerHTML = '❚❚';
+        startAnimation();
+      }
+    }
+    
+    // Reset animation
+    function resetAnimation() {
+      stopAnimation();
+      
+      // Clear all particles and highlights
+      clearAnimationElements();
+      
+      // If was playing, restart
+      if (isAnimating) {
+        startAnimation();
+      }
+    }
+    
+    // Export animation
+    function exportAnimation() {
+      // This would export the animation as a video or gif
+      alert('Animation export would be implemented here. This would create a mp4 or gif of the current animation.');
+    }
+    
+    // Start the code animation
+    function startAnimation() {
+      // Clear any existing animation
+      clearAnimationElements();
+      
+      // Parse the code to find important segments
+      const codeLines = codeFiles[activeFile].split('\n');
+      
+      // Find functions and code blocks
+      const functions = [];
+      let blockStart = null;
+      let blockIndent = 0;
+      
+      for (let i = 0; i < codeLines.length; i++) {
+        const line = codeLines[i];
+        
+        // Check for function definitions
+        if (line.match(/function\s+\w+\s*\(/)) {
+          functions.push({
+            line: i,
+            name: line.match(/function\s+(\w+)/)[1]
+          });
+        }
+        
+        // Track blocks (simplified approach)
+        if (line.includes('{')) {
+          if (blockStart === null) {
+            blockStart = i;
+            blockIndent = line.indexOf('{');
+          }
+        }
+        
+        if (blockStart !== null && line.includes('}')) {
+          // Check if this closing brace matches the indent level
+          if (line.indexOf('}') === blockIndent) {
+            // Add block to highlight later
+            addBlockHighlight(blockStart, i);
+            blockStart = null;
+          }
+        }
+      }
+      
+      // Start the animation sequence
+      const delay = 1000 / animationSpeed;
+      let currentLine = 0;
+      
+      // Highlight the first line
+      addLineHighlight(0);
+      
+      // Animate through the code
+      const animateInterval = setInterval(() => {
+        if (!isAnimating) {
+          clearInterval(animateInterval);
+          return;
+        }
+        
+        // Add particle for this line
+        addParticleForLine(currentLine);
+        
+        // Move to next line
+        currentLine++;
+        
+        // Add highlight for the new line
+        if (currentLine < codeLines.length) {
+          addLineHighlight(currentLine);
+        }
+        
+        // Loop back to start when we reach the end
+        if (currentLine >= codeLines.length) {
+          currentLine = 0;
+          
+          // Option: pause at the end
+          // clearInterval(animateInterval);
+          // isAnimating = false;
+          // document.getElementById('play-button').innerHTML = '▶';
+        }
+      }, delay);
+    }
+    
+    // Stop the animation
+    function stopAnimation() {
+      // Animation will stop on next frame
+    }
+    
+    // Clear all animation elements
+    function clearAnimationElements() {
+      // Clear line highlights
+      const overlay = document.getElementById('code-animation-overlay');
+      overlay.innerHTML = '';
+      lineHighlights = [];
+      blockHighlights = [];
+      
+      // Clear particles
+      particles.forEach(particle => {
+        particle.element.remove();
+      });
+      particles = [];
+      
+      // Clear 3D objects
+      while (scene.children.length > 0) {
+        scene.remove(scene.children[0]);
+      }
+      codeObjects = [];
+    }
+    
+    // Add a highlight for a specific line
+    function addLineHighlight(lineNumber) {
+      if (!document.getElementById('highlights-toggle').classList.contains('active')) {
+        return;
+      }
+      
+      const overlay = document.getElementById('code-animation-overlay');
+      const lineHeight = 24; // Approximate height of a line
+      
+      const highlight = document.createElement('div');
+      highlight.className = 'code-line-highlight';
+      highlight.style.top = `${lineNumber * lineHeight}px`;
+      
+      overlay.appendChild(highlight);
+      
+      // Store reference
+      lineHighlights.push({
+        element: highlight,
+        line: lineNumber
+      });
+      
+      // Remove old highlights if we have too many
+      if (lineHighlights.length > 3) {
+        const oldest = lineHighlights.shift();
+        oldest.element.remove();
+      }
+    }
+    
+    // Add a highlight for a code block
+    function addBlockHighlight(startLine, endLine) {
+      if (!document.getElementById('blocks-toggle').classList.contains('active')) {
+        return;
+      }
+      
+      const overlay = document.getElementById('code-animation-overlay');
+      const lineHeight = 24; // Approximate height of a line
+      
+      const highlight = document.createElement('div');
+      highlight.className = 'code-block-highlight';
+      highlight.style.top = `${startLine * lineHeight}px`;
+      highlight.style.height = `${(endLine - startLine + 1) * lineHeight}px`;
+      
+      overlay.appendChild(highlight);
+      
+      // Store reference
+      blockHighlights.push({
+        element: highlight,
+        startLine,
+        endLine
+      });
+      
+      // Fade out after a delay
+      setTimeout(() => {
+        highlight.style.opacity = '0';
+        setTimeout(() => {
+          highlight.remove();
+          blockHighlights = blockHighlights.filter(h => h.element !== highlight);
+        }, 1000);
+      }, 5000);
+    }
+    
+    // Add a particle at a specific line
+    function addParticleForLine(lineNumber) {
+      const overlay = document.getElementById('code-animation-overlay');
+      const lineHeight = 24; // Approximate height of a line
+      const codeArea = document.getElementById('code-area');
+      
+      // Create particle element
+      const particle = document.createElement('div');
+      particle.className = 'code-particle';
+      
+      // Position at the beginning of the line
+      const top = lineNumber * lineHeight + lineHeight / 2;
+      const left = 40; // Adjust based on line numbers width
+      
+      particle.style.top = `${top}px`;
+      particle.style.left = `${left}px`;
+      
+      // Set size based on settings
+      particle.style.width = `${particleSize}px`;
+      particle.style.height = `${particleSize}px`;
+      
+      // Set color based on theme
+      const colors = {
+        'cyberpunk': '#00f0ff',
+        'matrix': '#00ff41',
+        'sunset': '#ff8a00',
+        'midnight': '#00a1ff',
+        'aurora': '#00ffa3',
+        'cosmic': '#ff00cc'
+      };
+      
+      particle.style.backgroundColor = colors[currentTheme] || '#00f0ff';
+      
+      // Add to overlay
+      overlay.appendChild(particle);
+      
+      // Get current line of code
+      const code = codeFiles[activeFile].split('\n')[lineNumber] || '';
+      
+      // Calculate destination based on line length
+      const lineLength = code.length;
+      const maxWidth = codeArea.clientWidth - 80; // Adjust based on padding
+      const destinationLeft = left + (lineLength * 8); // Approximate character width
+      
+      // Movement animation based on preset
+      let animation;
+      
+      switch (currentPreset) {
+        case 'flow':
+          // Simple flow from left to right
+          animation = gsap.to(particle, {
+            left: `${destinationLeft}px`,
+            duration: 1.5 / animationSpeed,
+            ease: 'power1.inOut',
+            onComplete: () => {
+              // Remove particle when done
+              particle.remove();
+              particles = particles.filter(p => p.element !== particle);
+            }
+          });
+          break;
+          
+        case 'pulse':
+          // Pulse and flow
+          animation = gsap.to(particle, {
+            left: `${destinationLeft}px`,
+            scale: [1, 2, 1],
+            opacity: [1, 0.8, 1],
+            duration: 2 / animationSpeed,
+            ease: 'bounce.out',
+            onComplete: () => {
+              particle.remove();
+              particles = particles.filter(p => p.element !== particle);
+            }
+          });
+          break;
+          
+        case 'explode':
+          // Explode at the end of line
+          animation = gsap.timeline();
+          animation.to(particle, {
+            left: `${destinationLeft}px`,
+            duration: 1 / animationSpeed,
+            ease: 'power1.in'
+          }).to(particle, {
+            scale: 3,
+            opacity: 0,
+            duration: 0.5 / animationSpeed,
+            onComplete: () => {
+              particle.remove();
+              particles = particles.filter(p => p.element !== particle);
+              
+              // Add smaller particles that explode outward
+              for (let i = 0; i < 5; i++) {
+                addExplodingParticle(destinationLeft, top);
+              }
+            }
+          });
+          break;
+          
+        case 'matrix':
+          // Matrix-style falling code
+          animation = gsap.to(particle, {
+            top: `${top + 300}px`,
+            left: `${left + (Math.random() * 100 - 50)}px`,
+            opacity: 0,
+            duration: 3 / animationSpeed,
+            ease: 'power1.in',
+            onComplete: () => {
+              particle.remove();
+              particles = particles.filter(p => p.element !== particle);
+            }
+          });
+          break;
+          
+        case 'quantum':
+          // Quantum-like superposition effect
+          animation = gsap.timeline();
+          animation.to(particle, {
+            left: `${destinationLeft * 0.3}px`,
+            duration: 0.5 / animationSpeed,
+            ease: 'power1.inOut'
+          }).to(particle, {
+            opacity: 0.5,
+            scale: 0.5,
+            duration: 0.2 / animationSpeed
+          }).to(particle, {
+            left: `${destinationLeft * 0.7}px`,
+            top: `${top + (Math.random() * 40 - 20)}px`,
+            opacity: 0.8,
+            scale: 1.5,
+            duration: 0.5 / animationSpeed
+          }).to(particle, {
+            left: `${destinationLeft}px`,
+            top: `${top}px`,
+            opacity: 0,
+            scale: 2,
+            duration: 0.5 / animationSpeed,
+            onComplete: () => {
+              particle.remove();
+              particles = particles.filter(p => p.element !== particle);
+            }
+          });
+          break;
+          
+        case 'circuit':
+          // Circuit-like pathways
+          const waypoints = [];
+          // Create several waypoints in a circuit-like pattern
+          for (let i = 0; i < 5; i++) {
+            waypoints.push({
+              left: left + (destinationLeft - left) * (i + 1) / 6,
+              top: top + (Math.random() * 60 - 30) * Math.sin(i)
+            });
+          }
+          
+          // Final destination
+          waypoints.push({
+            left: destinationLeft,
+            top: top
+          });
+          
+          // Create animation through waypoints
+          animation = gsap.timeline();
+          
+          waypoints.forEach((point, i) => {
+            animation.to(particle, {
+              left: `${point.left}px`,
+              top: `${point.top}px`,
+              duration: 0.3 / animationSpeed,
+              ease: i < waypoints.length - 1 ? 'power1.inOut' : 'power1.in'
+            });
+          });
+          
+          // Final fade out
+          animation.to(particle, {
+            opacity: 0,
+            duration: 0.2 / animationSpeed,
+            onComplete: () => {
+              particle.remove();
+              particles = particles.filter(p => p.element !== particle);
+            }
+          });
+          break;
+          
+        default:
+          // Default simple flow
+          animation = gsap.to(particle, {
+            left: `${destinationLeft}px`,
+            duration: 1.5 / animationSpeed,
+            ease: 'power1.inOut',
+            onComplete: () => {
+              particle.remove();
+              particles = particles.filter(p => p.element !== particle);
+            }
+          });
+      }
+      
+      // Store particle reference
+      particles.push({
+        element: particle,
+        animation: animation,
+        line: lineNumber,
+        position: { x: left, y: top }
+      });
+      
+      // Check if we should add a 3D effect
+      if (document.getElementById('3d-toggle').classList.contains('active')) {
+        add3DEffectForLine(lineNumber, code);
+      }
+      
+      // Add additional particles based on density
+      if (Math.random() < 0.7 && document.getElementById('trails-toggle').classList.contains('active')) {
+        for (let i = 0; i < particleDensity / 3; i++) {
+          setTimeout(() => {
+            if (isAnimating) {
+              addTrailParticle(lineNumber, left + i * 10);
+            }
+          }, i * 100 / animationSpeed);
+        }
+      }
+    }
+    
+    // Add a smaller trailing particle
+    function addTrailParticle(lineNumber, startLeft) {
+      const overlay = document.getElementById('code-animation-overlay');
+      const lineHeight = 24;
+      
+      // Create particle
+      const particle = document.createElement('div');
+      particle.className = 'code-particle';
+      
+      // Position slightly randomly
+      const top = lineNumber * lineHeight + lineHeight / 2 + (Math.random() * 10 - 5);
+      const left = startLeft + (Math.random() * 20 - 10);
+      
+      particle.style.top = `${top}px`;
+      particle.style.left = `${left}px`;
+      
+      // Make it smaller
+      const size = particleSize * 0.7 * (Math.random() * 0.5 + 0.5);
+      particle.style.width = `${size}px`;
+      particle.style.height = `${size}px`;
+      
+      // Add some color variation
+      const colors = {
+        'cyberpunk': '#00f0ff',
+        'matrix': '#00ff41', 
+        'sunset': '#ff8a00',
+        'midnight': '#00a1ff',
+        'aurora': '#00ffa3',
+        'cosmic': '#ff00cc'
+      };
+      
+      const baseColor = colors[currentTheme] || '#00f0ff';
+      particle.style.backgroundColor = baseColor;
+      particle.style.opacity = 0.7 * Math.random() + 0.3;
+      
+      overlay.appendChild(particle);
+      
+      // Simple fade animation
+      const animation = gsap.to(particle, {
+        scale: 0,
+        opacity: 0,
+        duration: 1 / animationSpeed,
+        ease: 'power1.out',
+        onComplete: () => {
+          particle.remove();
+          particles = particles.filter(p => p.element !== particle);
+        }
+      });
+      
+      // Store reference
+      particles.push({
+        element: particle,
+        animation: animation,
+        line: lineNumber,
+        position: { x: left, y: top }
+      });
+    }
+    
+    // Add exploding particles effect
+    function addExplodingParticle(x, y) {
+      const overlay = document.getElementById('code-animation-overlay');
+      
+      // Create particle
+      const particle = document.createElement('div');
+      particle.className = 'code-particle';
+      
+      // Random position near the explosion center
+      const top = y + (Math.random() * 10 - 5);
+      const left = x + (Math.random() * 10 - 5);
+      
+      particle.style.top = `${top}px`;
+      particle.style.left = `${left}px`;
+      
+      // Small size
+      const size = particleSize * 0.6;
+      particle.style.width = `${size}px`;
+      particle.style.height = `${size}px`;
+      
+      // Set color with variation
+      const colors = {
+        'cyberpunk': '#00f0ff',
+        'matrix': '#00ff41',
+        'sunset': '#ff8a00',
+        'midnight': '#00a1ff',
+        'aurora': '#00ffa3',
+        'cosmic': '#ff00cc'
+      };
+      
+      const baseColor = colors[currentTheme] || '#00f0ff';
+      particle.style.backgroundColor = baseColor;
+      
+      overlay.appendChild(particle);
+      
+      // Explosion animation
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 50 + Math.random() * 50;
+      const destX = x + Math.cos(angle) * distance;
+      const destY = y + Math.sin(angle) * distance;
+      
+      const animation = gsap.to(particle, {
+        left: `${destX}px`,
+        top: `${destY}px`,
+        opacity: 0,
+        scale: 0,
+        duration: 0.8 / animationSpeed,
+        ease: 'power1.out',
+        onComplete: () => {
+          particle.remove();
+          particles = particles.filter(p => p.element !== particle);
+        }
+      });
+      
+      // Store reference
+      particles.push({
+        element: particle,
+        animation: animation,
+        position: { x: left, y: top }
+      });
+    }
+    
+    // Add 3D effects for the current line
+    function add3DEffectForLine(lineNumber, code) {
+      // Parse the line to see what kind of 3D object to create
+      let objectType = 'default';
+      
+      // Simplified parsing - just looking for keywords
+      if (code.includes('function')) {
+        objectType = 'function';
+      } else if (code.includes('class')) {
+        objectType = 'class';
+      } else if (code.includes('if') || code.includes('for') || code.includes('while')) {
+        objectType = 'control';
+      } else if (code.includes('return')) {
+        objectType = 'return';
+      } else if (code.includes('quantum') || code.includes('Quantum')) {
+        objectType = 'quantum';
+      }
+      
+      // Create 3D object
+      const object = create3DObject(objectType);
+      scene.add(object);
+      
+      // Store reference with lifespan
+      codeObjects.push({
+        object: object,
+        createdAt: Date.now(),
+        lifespan: 3000 / animationSpeed,
+        type: objectType
+      });
+    }
+    
+    // Create a 3D object based on code type
+    function create3DObject(type) {
+      let geometry, material;
+      
+      // Select geometry based on code type
+      switch (type) {
+        case 'function':
+          geometry = new THREE.TorusKnotGeometry(0.3, 0.1, 64, 8, 2, 3);
+          break;
+        case 'class':
+          geometry = new THREE.OctahedronGeometry(0.4, 0);
+          break;
+        case 'control':
+          geometry = new THREE.TetrahedronGeometry(0.3, 0);
+          break;
+        case 'return':
+          geometry = new THREE.ConeGeometry(0.3, 0.5, 16);
+          break;
+        case 'quantum':
+          geometry = new THREE.SphereGeometry(0.3, 16, 16);
+          break;
+        default:
+          geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+      }
+      
+      // Material based on current theme
+      const colors = {
+        'cyberpunk': 0x00f0ff,
+        'matrix': 0x00ff41,
+        'sunset': 0xff8a00,
+        'midnight': 0x00a1ff,
+        'aurora': 0x00ffa3,
+        'cosmic': 0xff00cc
+      };
+      
+      const color = colors[currentTheme] || 0x00f0ff;
+      
+      material = new THREE.MeshPhongMaterial({
+        color: color,
+        emissive: color,
+        emissiveIntensity: glowIntensity / 10,
+        transparent: true,
+        opacity: 0.8
+      });
+      
+      const mesh = new THREE.Mesh(geometry, material);
+      
+      // Position randomly in the scene
+      mesh.position.x = (Math.random() * 2 - 1) * 3;
+      mesh.position.y = (Math.random() * 2 - 1) * 2;
+      mesh.position.z = (Math.random() - 0.5) * 2;
+      
+      // Random rotation
+      mesh.rotation.x = Math.random() * Math.PI;
+      mesh.rotation.y = Math.random() * Math.PI;
+      
+      return mesh;
+    }
+    
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      const time = performance.now() * 0.001;
+      
+      // Update 3D objects
+      codeObjects.forEach((codeObj, index) => {
+        const object = codeObj.object;
+        
+        // Rotate objects
+        object.rotation.x += 0.01 * animationSpeed;
+        object.rotation.y += 0.02 * animationSpeed;
+        
+        // Add some movement
+        object.position.y += Math.sin(time * 2) * 0.003 * animationSpeed;
+        
+        // Handle lifespan
+        const age = Date.now() - codeObj.createdAt;
+        if (age > codeObj.lifespan) {
+          // Start fading out
+          const fadeProgress = Math.min(1, (age - codeObj.lifespan) / 1000);
+          object.material.opacity = 0.8 * (1 - fadeProgress);
+          
+          // Remove when fully faded
+          if (fadeProgress >= 1) {
+            scene.remove(object);
+            codeObjects.splice(index, 1);
+          }
+        }
+      });
+      
+      // Render scene
+      composer.render();
+    }
+  </script>
+</body>
+</html>

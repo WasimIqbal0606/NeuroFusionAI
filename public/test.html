@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeuroFusionOS Test Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #0c0c1d;
+      color: #ffffff;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .card {
+      background-color: #1a1a2e;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #3a36e0;
+    }
+    #status {
+      padding: 10px;
+      border-radius: 4px;
+      background-color: #2d2d3a;
+    }
+    #response {
+      padding: 10px;
+      border-radius: 4px;
+      background-color: #2d2d3a;
+      white-space: pre-wrap;
+      min-height: 100px;
+    }
+    #query {
+      width: 100%;
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid #3a36e0;
+      background-color: #2d2d3a;
+      color: white;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 15px;
+      background: linear-gradient(90deg, #3a36e0, #0db8de);
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>NeuroFusionOS Test Interface</h1>
+    
+    <div class="card">
+      <h2>System Status</h2>
+      <div id="status">Checking status...</div>
+    </div>
+    
+    <div class="card">
+      <h2>Query Test</h2>
+      <input type="text" id="query" placeholder="Enter your query here...">
+      <button id="submit-query">Submit Query</button>
+      <h3>Response:</h3>
+      <div id="response">No response yet.</div>
+    </div>
+  </div>
+
+  <script>
+    // Check system status
+    fetch('/api/status')
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('status').innerHTML = `
+          <p><strong>Status:</strong> ${data.status}</p>
+          <p><strong>Active Agents:</strong> ${data.active_agents.join(', ')}</p>
+          <p><strong>Uptime:</strong> ${Math.round(data.uptime)} seconds</p>
+          <p><strong>Memory Usage:</strong> ${Math.round(data.memory_usage.heapUsed / 1024 / 1024)} MB / ${Math.round(data.memory_usage.heapTotal / 1024 / 1024)} MB</p>
+          <p><strong>Version:</strong> ${data.system_version}</p>
+        `;
+      })
+      .catch(error => {
+        document.getElementById('status').innerHTML = `Error: ${error.message}. Server may not be running.`;
+      });
+    
+    // Handle query submission
+    document.getElementById('submit-query').addEventListener('click', function() {
+      const query = document.getElementById('query').value;
+      if (!query) return;
+      
+      document.getElementById('response').textContent = 'Processing...';
+      
+      fetch('/api/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          document.getElementById('response').textContent = `Error: ${data.error}`;
+        } else {
+          document.getElementById('response').innerHTML = `
+            <p><strong>Result:</strong> ${data.result.result}</p>
+            <p><strong>Confidence:</strong> ${Math.round(data.result.confidence * 100)}%</p>
+            <p><strong>Reasoning Path:</strong></p>
+            <ul>
+              ${data.result.reasoning_path.map(step => `<li>${step}</li>`).join('')}
+            </ul>
+          `;
+        }
+      })
+      .catch(error => {
+        document.getElementById('response').textContent = `Error: ${error.message}`;
+      });
+    });
+  </script>
+</body>
+</html>

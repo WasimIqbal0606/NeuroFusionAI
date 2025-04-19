@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeuroFusionOS - Quantum Neural Hybrid AGI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #3a36e0;
+      --secondary-color: #0db8de;
+      --background-dark: #0c0c1d;
+      --background-light: #1a1a2e;
+      --text-primary: #ffffff;
+      --text-secondary: #b3b3cc;
+      --accent-color: #7a3cf5;
+      --success-color: #00c853;
+      --warning-color: #ffab00;
+      --error-color: #ff5252;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--background-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    header {
+      background-color: var(--background-light);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .logo {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: var(--secondary-color);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .logo span {
+      color: var(--primary-color);
+    }
+    
+    .system-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: var(--success-color);
+    }
+    
+    .main-container {
+      display: flex;
+      flex: 1;
+    }
+    
+    .sidebar {
+      width: 250px;
+      background-color: var(--background-light);
+      padding: 1.5rem;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .sidebar h2 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      color: var(--secondary-color);
+    }
+    
+    .nav-item {
+      padding: 0.7rem 0.5rem;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    .nav-item:hover, .nav-item.active {
+      background-color: rgba(58, 54, 224, 0.2);
+    }
+    
+    .content {
+      flex: 1;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .card {
+      background-color: var(--background-light);
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card h3 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      color: var(--secondary-color);
+    }
+    
+    .card-value {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    
+    .card-subtitle {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+    
+    .neural-visualization {
+      background-color: var(--background-light);
+      border-radius: 8px;
+      padding: 1rem;
+      flex: 1;
+      position: relative;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    
+    .command-interface {
+      margin-top: 2rem;
+    }
+    
+    .command-form {
+      display: flex;
+      gap: 1rem;
+    }
+    
+    .command-input {
+      flex: 1;
+      padding: 1rem;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background-color: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      font-size: 1rem;
+    }
+    
+    .command-input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+    
+    .command-button {
+      padding: 0 2rem;
+      border-radius: 4px;
+      border: none;
+      background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+      color: white;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.3s;
+    }
+    
+    .command-button:hover {
+      opacity: 0.9;
+    }
+    
+    .response-area {
+      margin-top: 2rem;
+      max-height: 300px;
+      overflow-y: auto;
+      padding: 1rem;
+      background-color: var(--background-light);
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .response-item {
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .response-query {
+      color: var(--secondary-color);
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+    
+    .response-result {
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+    
+    .response-meta {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.5rem;
+      display: flex;
+      gap: 1rem;
+    }
+    
+    .quantum-effects {
+      margin-top: 1rem;
+      padding: 0.5rem;
+      border-radius: 4px;
+      background-color: rgba(122, 60, 245, 0.2);
+      font-size: 0.9rem;
+    }
+    
+    .quantum-effects-title {
+      font-weight: 500;
+      margin-bottom: 0.3rem;
+      color: var(--accent-color);
+    }
+    
+    .quantum-effect-item {
+      margin-bottom: 0.3rem;
+      padding-left: 1rem;
+      position: relative;
+    }
+    
+    .quantum-effect-item::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--accent-color);
+    }
+    
+    .loading {
+      position: relative;
+    }
+    
+    .loading::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 8px;
+    }
+    
+    .loading::before {
+      content: "Processing...";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    
+    @media (max-width: 768px) {
+      .main-container {
+        flex-direction: column;
+      }
+      
+      .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 1rem;
+      }
+      
+      .nav-items {
+        display: flex;
+        overflow-x: auto;
+        gap: 0.5rem;
+      }
+      
+      .nav-item {
+        white-space: nowrap;
+        padding: 0.5rem 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z" fill="#0db8de"/>
+        <path d="M12 6C8.69 6 6 8.69 6 12C6 15.31 8.69 18 12 18C15.31 18 18 15.31 18 12C18 8.69 15.31 6 12 6ZM12 16C9.79 16 8 14.21 8 12C8 9.79 9.79 8 12 8C14.21 8 16 9.79 16 12C16 14.21 14.21 16 12 16Z" fill="#3a36e0"/>
+      </svg>
+      <div>Neuro<span>Fusion</span>OS</div>
+    </div>
+    <div class="system-status">
+      <div class="status-indicator"></div>
+      <div>System Operational</div>
+    </div>
+  </header>
+  
+  <div class="main-container">
+    <div class="sidebar">
+      <h2>Navigation</h2>
+      <div class="nav-items">
+        <div class="nav-item active">Dashboard</div>
+        <div class="nav-item">Neural Network</div>
+        <div class="nav-item">Quantum Simulator</div>
+        <div class="nav-item">Memory</div>
+        <div class="nav-item">Agents</div>
+        <div class="nav-item">Settings</div>
+      </div>
+    </div>
+    
+    <div class="content">
+      <div class="dashboard">
+        <div class="card">
+          <h3>Active Agents</h3>
+          <div class="card-value" id="active-agents-count">3</div>
+          <div class="card-subtitle">Currently operational agents</div>
+        </div>
+        
+        <div class="card">
+          <h3>Memory Entries</h3>
+          <div class="card-value" id="memory-count">0</div>
+          <div class="card-subtitle">Stored memory vectors</div>
+        </div>
+        
+        <div class="card">
+          <h3>Quantum State</h3>
+          <div class="card-value" id="qubit-count">5</div>
+          <div class="card-subtitle" id="quantum-dimension">32 state dimensions</div>
+        </div>
+        
+        <div class="card">
+          <h3>System Uptime</h3>
+          <div class="card-value" id="uptime">00:00:00</div>
+          <div class="card-subtitle">Since last restart</div>
+        </div>
+      </div>
+      
+      <div class="neural-visualization" id="visualization">
+        <!-- Three.js visualization will be rendered here -->
+      </div>
+      
+      <div class="command-interface">
+        <div class="command-form">
+          <input type="text" class="command-input" id="command-input" placeholder="Enter your query or command...">
+          <button class="command-button" id="command-button">Process</button>
+        </div>
+        
+        <div class="response-area" id="response-area">
+          <div class="response-item">
+            <div class="response-query">System: Initialization Complete</div>
+            <div class="response-result">NeuroFusionOS is initialized and ready for operation. The hybrid quantum-neural system is operational with 5 qubits and 32 state dimensions.</div>
+            <div class="response-meta">
+              <span>Confidence: 100%</span>
+              <span>Processing Time: 0.12s</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
+  <script>
+    // DOM elements
+    const statusIndicator = document.querySelector('.status-indicator');
+    const activeAgentsCount = document.getElementById('active-agents-count');
+    const memoryCount = document.getElementById('memory-count');
+    const qubitCount = document.getElementById('qubit-count');
+    const quantumDimension = document.getElementById('quantum-dimension');
+    const uptime = document.getElementById('uptime');
+    const visualizationContainer = document.getElementById('visualization');
+    const commandInput = document.getElementById('command-input');
+    const commandButton = document.getElementById('command-button');
+    const responseArea = document.getElementById('response-area');
+    
+    // Three.js setup for neural visualization
+    let scene, camera, renderer;
+    let neurons = [];
+    let connections = [];
+    let animationFrame;
+    
+    function initVisualization() {
+      // Create scene
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(75, visualizationContainer.clientWidth / visualizationContainer.clientHeight, 0.1, 1000);
+      
+      // Create renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(visualizationContainer.clientWidth, visualizationContainer.clientHeight);
+      renderer.setClearColor(0x1a1a2e, 1);
+      visualizationContainer.appendChild(renderer.domElement);
+      
+      // Position camera
+      camera.position.z = 30;
+      
+      // Add light
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+      scene.add(ambientLight);
+      
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+      directionalLight.position.set(0, 1, 1);
+      scene.add(directionalLight);
+      
+      // Create neurons (spheres)
+      createNeuralNetwork();
+      
+      // Handle window resize
+      window.addEventListener('resize', onWindowResize);
+      
+      // Start animation
+      animate();
+    }
+    
+    function createNeuralNetwork() {
+      // Clear existing neurons and connections
+      neurons.forEach(neuron => scene.remove(neuron));
+      connections.forEach(connection => scene.remove(connection));
+      neurons = [];
+      connections = [];
+      
+      // Layer setup
+      const layers = [8, 16, 16, 8];
+      const layerSpacing = 15;
+      const neuronSize = 0.5;
+      
+      // Create material for neurons
+      const neuronMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0x3a36e0,
+        emissive: 0x3a36e0,
+        emissiveIntensity: 0.2,
+        shininess: 100
+      });
+      
+      // Create neurons for each layer
+      const neuronsByLayer = [];
+      
+      for (let layerIndex = 0; layerIndex < layers.length; layerIndex++) {
+        const layerSize = layers[layerIndex];
+        const layerNeurons = [];
+        
+        for (let neuronIndex = 0; neuronIndex < layerSize; neuronIndex++) {
+          const geometry = new THREE.SphereGeometry(neuronSize, 16, 16);
+          const neuron = new THREE.Mesh(geometry, neuronMaterial);
+          
+          // Position neurons in a grid pattern for each layer
+          const xPos = layerIndex * layerSpacing - (layers.length - 1) * layerSpacing / 2;
+          const maxHeight = Math.max(8, layerSize);
+          const yPos = (neuronIndex - layerSize / 2) * (20 / maxHeight);
+          
+          neuron.position.set(xPos, yPos, 0);
+          
+          // Add random motion for animation
+          neuron.userData = {
+            originalPosition: { x: xPos, y: yPos, z: 0 },
+            velocity: {
+              x: (Math.random() - 0.5) * 0.01,
+              y: (Math.random() - 0.5) * 0.01,
+              z: (Math.random() - 0.5) * 0.01
+            },
+            phase: Math.random() * Math.PI * 2
+          };
+          
+          scene.add(neuron);
+          neurons.push(neuron);
+          layerNeurons.push(neuron);
+        }
+        
+        neuronsByLayer.push(layerNeurons);
+      }
+      
+      // Create connections between layers
+      const connectionMaterial = new THREE.LineBasicMaterial({ 
+        color: 0x0db8de,
+        transparent: true,
+        opacity: 0.2
+      });
+      
+      for (let layerIndex = 0; layerIndex < layers.length - 1; layerIndex++) {
+        const currentLayer = neuronsByLayer[layerIndex];
+        const nextLayer = neuronsByLayer[layerIndex + 1];
+        
+        // Connect each neuron to some neurons in the next layer
+        for (let i = 0; i < currentLayer.length; i++) {
+          for (let j = 0; j < nextLayer.length; j++) {
+            // Skip some connections to avoid clutter
+            if (Math.random() > 0.3) continue;
+            
+            const geometry = new THREE.BufferGeometry().setFromPoints([
+              currentLayer[i].position,
+              nextLayer[j].position
+            ]);
+            
+            const line = new THREE.Line(geometry, connectionMaterial);
+            scene.add(line);
+            connections.push({
+              line,
+              startNeuron: currentLayer[i],
+              endNeuron: nextLayer[j],
+              active: false,
+              pulsePhase: Math.random() * Math.PI * 2,
+              pulseSpeed: 0.05 + Math.random() * 0.1
+            });
+          }
+        }
+      }
+    }
+    
+    function onWindowResize() {
+      camera.aspect = visualizationContainer.clientWidth / visualizationContainer.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(visualizationContainer.clientWidth, visualizationContainer.clientHeight);
+    }
+    
+    function animate() {
+      animationFrame = requestAnimationFrame(animate);
+      
+      // Rotate the scene slightly
+      scene.rotation.y += 0.001;
+      
+      // Animate neurons with slight movement
+      const time = Date.now() * 0.001;
+      
+      neurons.forEach(neuron => {
+        const { originalPosition, velocity, phase } = neuron.userData;
+        
+        // Apply small oscillating movement
+        neuron.position.x = originalPosition.x + Math.sin(time + phase) * 0.3;
+        neuron.position.y = originalPosition.y + Math.cos(time + phase * 1.3) * 0.3;
+        neuron.position.z = originalPosition.z + Math.sin(time * 0.7 + phase) * 0.3;
+        
+        // Subtly pulse the neuron size
+        const scale = 1 + 0.1 * Math.sin(time * 2 + phase);
+        neuron.scale.set(scale, scale, scale);
+      });
+      
+      // Update connection lines to match neuron positions
+      connections.forEach(connection => {
+        const { line, startNeuron, endNeuron, pulsePhase, pulseSpeed } = connection;
+        
+        // Update line positions
+        const positions = line.geometry.attributes.position.array;
+        positions[0] = startNeuron.position.x;
+        positions[1] = startNeuron.position.y;
+        positions[2] = startNeuron.position.z;
+        positions[3] = endNeuron.position.x;
+        positions[4] = endNeuron.position.y;
+        positions[5] = endNeuron.position.z;
+        
+        line.geometry.attributes.position.needsUpdate = true;
+        
+        // Pulse effect on some connections
+        if (Math.random() < 0.001) {
+          connection.active = true;
+          setTimeout(() => { connection.active = false; }, 500 + Math.random() * 1000);
+        }
+        
+        // Animate active connections
+        if (connection.active) {
+          line.material.opacity = 0.1 + 0.5 * Math.sin(time * 5 + pulsePhase);
+          line.material.color.setHSL(0.6, 1, 0.5 + 0.5 * Math.sin(time * 5 + pulsePhase));
+        } else {
+          line.material.opacity = 0.1;
+          line.material.color.set(0x0db8de);
+        }
+      });
+      
+      renderer.render(scene, camera);
+    }
+    
+    // API calls
+    async function fetchSystemStatus() {
+      try {
+        const response = await fetch('/api/status');
+        const data = await response.json();
+        
+        // Update dashboard
+        activeAgentsCount.textContent = data.active_agents.length;
+        memoryCount.textContent = data.memory_count || 0;
+        qubitCount.textContent = data.quantum_state.initialized ? data.quantum_state.dimension : 'N/A';
+        quantumDimension.textContent = data.quantum_state.initialized 
+          ? `${Math.pow(2, data.quantum_state.dimension)} state dimensions` 
+          : 'Quantum system inactive';
+        
+        // Format uptime
+        const uptimeSeconds = Math.floor(data.uptime);
+        const hours = Math.floor(uptimeSeconds / 3600);
+        const minutes = Math.floor((uptimeSeconds % 3600) / 60);
+        const seconds = uptimeSeconds % 60;
+        uptime.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        // Update status indicator
+        if (data.status === 'operational') {
+          statusIndicator.style.backgroundColor = 'var(--success-color)';
+        } else {
+          statusIndicator.style.backgroundColor = 'var(--warning-color)';
+        }
+      } catch (error) {
+        console.error('Error fetching system status:', error);
+        statusIndicator.style.backgroundColor = 'var(--error-color)';
+      }
+    }
+    
+    async function processQuery(query) {
+      try {
+        // Show loading state
+        responseArea.classList.add('loading');
+        
+        // Send query to API
+        const startTime = performance.now();
+        const response = await fetch('/api/query', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ query })
+        });
+        
+        const data = await response.json();
+        const processingTime = ((performance.now() - startTime) / 1000).toFixed(2);
+        
+        // Remove loading state
+        responseArea.classList.remove('loading');
+        
+        // Create response element
+        const responseItem = document.createElement('div');
+        responseItem.className = 'response-item';
+        
+        // Add query
+        const responseQuery = document.createElement('div');
+        responseQuery.className = 'response-query';
+        responseQuery.textContent = `You: ${query}`;
+        responseItem.appendChild(responseQuery);
+        
+        // Add result
+        const responseResult = document.createElement('div');
+        responseResult.className = 'response-result';
+        responseResult.textContent = data.result.result || data.result.error || 'No response received.';
+        responseItem.appendChild(responseResult);
+        
+        // Add metadata
+        const responseMeta = document.createElement('div');
+        responseMeta.className = 'response-meta';
+        
+        const confidenceSpan = document.createElement('span');
+        const confidence = data.result.confidence 
+          ? Math.round(data.result.confidence * 100) 
+          : (data.result.quantum_confidence ? Math.round(data.result.quantum_confidence * 100) : 'N/A');
+        confidenceSpan.textContent = `Confidence: ${confidence}%`;
+        responseMeta.appendChild(confidenceSpan);
+        
+        const timeSpan = document.createElement('span');
+        timeSpan.textContent = `Processing Time: ${processingTime}s`;
+        responseMeta.appendChild(timeSpan);
+        
+        responseItem.appendChild(responseMeta);
+        
+        // Add quantum effects if present
+        if (data.result.quantum_effects && data.result.quantum_effects.length > 0) {
+          const quantumEffects = document.createElement('div');
+          quantumEffects.className = 'quantum-effects';
+          
+          const quantumTitle = document.createElement('div');
+          quantumTitle.className = 'quantum-effects-title';
+          quantumTitle.textContent = 'Quantum Effects Detected:';
+          quantumEffects.appendChild(quantumTitle);
+          
+          data.result.quantum_effects.forEach(effect => {
+            const effectItem = document.createElement('div');
+            effectItem.className = 'quantum-effect-item';
+            effectItem.textContent = effect.description || effect.type;
+            quantumEffects.appendChild(effectItem);
+          });
+          
+          responseItem.appendChild(quantumEffects);
+        }
+        
+        // Add to response area
+        responseArea.insertBefore(responseItem, responseArea.firstChild);
+        
+        // Activate random neural connections for visual effect
+        activateRandomConnections(10 + Math.floor(Math.random() * 20));
+        
+        // Update system status
+        fetchSystemStatus();
+        
+        return data;
+      } catch (error) {
+        console.error('Error processing query:', error);
+        responseArea.classList.remove('loading');
+        
+        // Create error response
+        const responseItem = document.createElement('div');
+        responseItem.className = 'response-item';
+        
+        const responseQuery = document.createElement('div');
+        responseQuery.className = 'response-query';
+        responseQuery.textContent = `You: ${query}`;
+        responseItem.appendChild(responseQuery);
+        
+        const responseResult = document.createElement('div');
+        responseResult.className = 'response-result';
+        responseResult.textContent = `Error: Failed to process query. ${error.message}`;
+        responseItem.appendChild(responseResult);
+        
+        responseArea.insertBefore(responseItem, responseArea.firstChild);
+      }
+    }
+    
+    function activateRandomConnections(count) {
+      const randomConnections = [];
+      for (let i = 0; i < Math.min(count, connections.length); i++) {
+        let connection;
+        do {
+          connection = connections[Math.floor(Math.random() * connections.length)];
+        } while (randomConnections.includes(connection));
+        
+        randomConnections.push(connection);
+        connection.active = true;
+      }
+      
+      setTimeout(() => {
+        randomConnections.forEach(conn => conn.active = false);
+      }, 2000);
+    }
+    
+    // Event listeners
+    commandButton.addEventListener('click', () => {
+      const query = commandInput.value.trim();
+      if (query) {
+        processQuery(query);
+        commandInput.value = '';
+      }
+    });
+    
+    commandInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const query = commandInput.value.trim();
+        if (query) {
+          processQuery(query);
+          commandInput.value = '';
+        }
+      }
+    });
+    
+    // Initialize the page
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize 3D visualization
+      initVisualization();
+      
+      // Fetch initial system status
+      fetchSystemStatus();
+      
+      // Set up periodic status updates
+      setInterval(fetchSystemStatus, 5000);
+    });
+  </script>
+</body>
+</html>

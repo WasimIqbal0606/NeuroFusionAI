@@ -1,0 +1,2057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeuroFusionOS - Quantum Neural Hybrid AGI | Advanced Interface</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/postprocessing/ShaderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.11.0/dist/gsap.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #00f0ff;
+      --secondary-color: #7700ff;
+      --accent-color: #ff00aa;
+      --background-dark: #050510;
+      --background-medium: #080830;
+      --background-light: #10105a;
+      --text-primary: #ffffff;
+      --text-secondary: #aaaaff;
+      --success-color: #00ffa3;
+      --warning-color: #ffcc00;
+      --error-color: #ff2266;
+      --glow-primary: 0 0 10px rgba(0, 240, 255, 0.7);
+      --glow-secondary: 0 0 15px rgba(119, 0, 255, 0.7);
+      --glow-accent: 0 0 15px rgba(255, 0, 170, 0.7);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--background-dark);
+      color: var(--text-primary);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      position: relative;
+    }
+    
+    /* Background animated gradient */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 50% 50%, rgba(1, 10, 30, 0.8), rgba(1, 1, 10, 0.95));
+      z-index: -1;
+    }
+    
+    /* Star field effect */
+    body::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        radial-gradient(1px 1px at 10% 10%, white, transparent),
+        radial-gradient(1px 1px at 20% 20%, white, transparent),
+        radial-gradient(1px 1px at 30% 30%, white, transparent),
+        radial-gradient(1px 1px at 40% 40%, white, transparent),
+        radial-gradient(1px 1px at 50% 50%, white, transparent),
+        radial-gradient(1px 1px at 60% 60%, white, transparent),
+        radial-gradient(1px 1px at 70% 70%, white, transparent),
+        radial-gradient(1px 1px at 80% 80%, white, transparent),
+        radial-gradient(1px 1px at 90% 90%, white, transparent);
+      background-size: 200% 200%;
+      opacity: 0.15;
+      z-index: -1;
+      animation: stars 120s ease infinite;
+    }
+    
+    @keyframes stars {
+      0%, 100% { background-position: 0% 0%; }
+      25% { background-position: 100% 0%; }
+      50% { background-position: 100% 100%; }
+      75% { background-position: 0% 100%; }
+    }
+    
+    .no-scroll {
+      overflow: hidden;
+    }
+    
+    #visualization-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+    
+    /* Interface Container */
+    .interface-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      grid-template-columns: 300px 1fr 300px;
+      grid-template-areas:
+        "header header header"
+        "left-panel main-area right-panel"
+        "command-area command-area command-area";
+      padding: 20px;
+      z-index: 1;
+      pointer-events: none;
+    }
+    
+    .interface-container > * {
+      pointer-events: auto;
+    }
+    
+    /* Header */
+    .header {
+      grid-area: header;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 30px;
+      background: rgba(8, 8, 48, 0.7);
+      backdrop-filter: blur(15px);
+      border-radius: 20px;
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      box-shadow: var(--glow-primary), inset 0 0 20px rgba(0, 240, 255, 0.1);
+      margin-bottom: 20px;
+    }
+    
+    .logo {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 1.8rem;
+      background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: var(--glow-primary);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      box-shadow: var(--glow-primary);
+    }
+    
+    .nav-controls {
+      display: flex;
+      gap: 30px;
+    }
+    
+    .nav-item {
+      padding: 8px 20px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      color: var(--text-primary);
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 500;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      border: 1px solid rgba(0, 240, 255, 0.1);
+    }
+    
+    .nav-item:hover, .nav-item.active {
+      background: rgba(0, 240, 255, 0.1);
+      box-shadow: var(--glow-primary);
+      border-color: rgba(0, 240, 255, 0.3);
+      transform: translateY(-2px);
+    }
+    
+    .system-status {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 15px;
+      border-radius: 20px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(0, 255, 163, 0.3);
+    }
+    
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--success-color);
+      box-shadow: 0 0 10px var(--success-color);
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 0.7; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.1); }
+      100% { opacity: 0.7; transform: scale(0.8); }
+    }
+    
+    .status-text {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: var(--success-color);
+    }
+    
+    /* Left Panel */
+    .left-panel {
+      grid-area: left-panel;
+      background: rgba(8, 8, 48, 0.7);
+      backdrop-filter: blur(15px);
+      border-radius: 20px;
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      box-shadow: var(--glow-primary), inset 0 0 20px rgba(0, 240, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      gap: 20px;
+      overflow-y: auto;
+      max-height: calc(100vh - 200px);
+    }
+    
+    .panel-section {
+      margin-bottom: 20px;
+    }
+    
+    .panel-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 15px;
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .panel-content {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      padding: 15px;
+      border: 1px solid rgba(0, 240, 255, 0.1);
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+    
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(0, 240, 255, 0.1);
+    }
+    
+    .stat-item:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--glow-primary);
+      border-color: rgba(0, 240, 255, 0.3);
+    }
+    
+    .stat-value {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .stat-label {
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      margin-top: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .agent-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .agent-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(0, 240, 255, 0.1);
+    }
+    
+    .agent-item:hover {
+      transform: translateX(5px);
+      background: rgba(0, 240, 255, 0.1);
+      border-color: rgba(0, 240, 255, 0.3);
+    }
+    
+    .agent-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--success-color);
+      box-shadow: 0 0 5px var(--success-color);
+    }
+    
+    .agent-name {
+      flex: 1;
+      font-weight: 500;
+    }
+    
+    .agent-action {
+      color: var(--primary-color);
+      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 3px 8px;
+      border-radius: 5px;
+      background: rgba(0, 240, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+    
+    .agent-action:hover {
+      background: rgba(0, 240, 255, 0.2);
+      box-shadow: var(--glow-primary);
+    }
+    
+    /* Main Area */
+    .main-area {
+      grid-area: main-area;
+      position: relative;
+      padding: 0 20px;
+      overflow: hidden;
+    }
+    
+    .visualization-overlay {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 10;
+    }
+    
+    .viz-control {
+      padding: 8px 15px;
+      border-radius: 10px;
+      background: rgba(8, 8, 48, 0.7);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      color: var(--primary-color);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: var(--glow-primary);
+    }
+    
+    .viz-control:hover {
+      background: rgba(0, 240, 255, 0.1);
+      transform: translateX(-3px);
+    }
+    
+    /* Right Panel */
+    .right-panel {
+      grid-area: right-panel;
+      background: rgba(8, 8, 48, 0.7);
+      backdrop-filter: blur(15px);
+      border-radius: 20px;
+      border: 1px solid rgba(119, 0, 255, 0.2);
+      box-shadow: var(--glow-secondary), inset 0 0 20px rgba(119, 0, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      gap: 20px;
+      overflow-y: auto;
+      max-height: calc(100vh - 200px);
+    }
+    
+    .quantum-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .quantum-stat {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      padding: 15px;
+      border: 1px solid rgba(119, 0, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+    
+    .quantum-stat:hover {
+      border-color: rgba(119, 0, 255, 0.3);
+      box-shadow: 0 0 10px rgba(119, 0, 255, 0.3);
+      transform: translateY(-3px);
+    }
+    
+    .quantum-label {
+      color: var(--secondary-color);
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.5px;
+    }
+    
+    .quantum-value {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .quantum-description {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-top: 5px;
+    }
+    
+    .quantum-visual {
+      height: 120px;
+      width: 100%;
+      margin-top: 10px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.2);
+      position: relative;
+    }
+    
+    .probability-bar {
+      display: flex;
+      height: 100%;
+      align-items: flex-end;
+      gap: 4px;
+      padding: 5px;
+    }
+    
+    .prob-column {
+      flex: 1;
+      background: linear-gradient(180deg, var(--secondary-color), var(--primary-color));
+      border-radius: 3px 3px 0 0;
+      animation: probability-animation 5s ease-in-out infinite;
+      opacity: 0.7;
+      transform-origin: bottom;
+    }
+    
+    @keyframes probability-animation {
+      0%, 100% { transform: scaleY(var(--height)); }
+      50% { transform: scaleY(calc(var(--height) * 0.8)); }
+    }
+    
+    .memory-items {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .memory-item {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      padding: 12px;
+      border: 1px solid rgba(119, 0, 255, 0.1);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .memory-item:hover {
+      border-color: rgba(119, 0, 255, 0.3);
+      box-shadow: 0 0 10px rgba(119, 0, 255, 0.3);
+    }
+    
+    .memory-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(180deg, var(--secondary-color), transparent);
+    }
+    
+    .memory-type {
+      font-size: 0.75rem;
+      color: var(--secondary-color);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .memory-content {
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+    
+    .memory-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    
+    /* Command Area */
+    .command-area {
+      grid-area: command-area;
+      background: rgba(8, 8, 48, 0.7);
+      backdrop-filter: blur(15px);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 0, 170, 0.2);
+      box-shadow: var(--glow-accent), inset 0 0 20px rgba(255, 0, 170, 0.1);
+      display: flex;
+      flex-direction: column;
+      margin-top: 20px;
+      padding: 20px;
+      gap: 20px;
+    }
+    
+    .command-input-area {
+      display: flex;
+      gap: 15px;
+    }
+    
+    .command-input {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 0, 170, 0.2);
+      color: var(--text-primary);
+      padding: 15px 20px;
+      border-radius: 15px;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.3s ease;
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+    
+    .command-input::placeholder {
+      color: rgba(255, 255, 255, 0.3);
+    }
+    
+    .command-input:focus {
+      border-color: rgba(255, 0, 170, 0.5);
+      box-shadow: var(--glow-accent), inset 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+    
+    .command-button {
+      padding: 0 30px;
+      background: linear-gradient(90deg, var(--secondary-color), var(--accent-color));
+      color: white;
+      border: none;
+      border-radius: 15px;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 500;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: var(--glow-accent);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .command-button::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+      transform: scale(0);
+      opacity: 0;
+      transition: transform 0.5s, opacity 0.5s;
+    }
+    
+    .command-button:hover {
+      transform: translateY(-2px);
+    }
+    
+    .command-button:hover::before {
+      transform: scale(1);
+      opacity: 1;
+    }
+    
+    .response-area {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 15px;
+      height: 150px;
+      padding: 15px;
+      overflow-y: auto;
+      border: 1px solid rgba(255, 0, 170, 0.1);
+    }
+    
+    .response-item {
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .response-query {
+      color: var(--accent-color);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    
+    .response-result {
+      color: var(--text-primary);
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+    
+    .response-meta {
+      display: flex;
+      gap: 15px;
+      margin-top: 10px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    
+    .quantum-effects {
+      margin-top: 10px;
+      padding: 10px;
+      background: rgba(119, 0, 255, 0.1);
+      border-radius: 10px;
+      border: 1px solid rgba(119, 0, 255, 0.2);
+    }
+    
+    .quantum-effects-title {
+      color: var(--secondary-color);
+      font-weight: 600;
+      font-size: 0.85rem;
+      margin-bottom: 5px;
+    }
+    
+    .quantum-effect-item {
+      font-size: 0.85rem;
+      padding: 3px 0 3px 20px;
+      position: relative;
+    }
+    
+    .quantum-effect-item::before {
+      content: '›';
+      position: absolute;
+      left: 5px;
+      color: var(--secondary-color);
+      font-weight: bold;
+    }
+    
+    /* Loading Effects */
+    .loading {
+      position: relative;
+    }
+    
+    .loading::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 15px;
+      z-index: 10;
+    }
+    
+    .loading::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 50px;
+      height: 50px;
+      border: 3px solid transparent;
+      border-top-color: var(--primary-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      z-index: 11;
+    }
+    
+    @keyframes spin {
+      from { transform: translate(-50%, -50%) rotate(0deg); }
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    
+    /* Neon Glow Effect */
+    .neon-glow {
+      text-shadow: 0 0 5px var(--primary-color), 0 0 10px var(--primary-color), 0 0 20px var(--primary-color);
+    }
+    
+    /* Neural Network SVG Animation */
+    .neural-network-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      opacity: 0.05;
+      pointer-events: none;
+    }
+    
+    /* Media Queries */
+    @media (max-width: 1200px) {
+      .interface-container {
+        grid-template-columns: 250px 1fr 250px;
+      }
+    }
+    
+    @media (max-width: 992px) {
+      .interface-container {
+        grid-template-columns: 200px 1fr;
+        grid-template-areas:
+          "header header"
+          "left-panel main-area"
+          "right-panel right-panel"
+          "command-area command-area";
+      }
+      
+      .right-panel {
+        margin-top: 20px;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .interface-container {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "header"
+          "main-area"
+          "left-panel"
+          "right-panel"
+          "command-area";
+        padding: 10px;
+      }
+      
+      .header {
+        padding: 10px 15px;
+      }
+      
+      .logo {
+        font-size: 1.4rem;
+      }
+      
+      .nav-controls {
+        display: none;
+      }
+      
+      .left-panel, .right-panel {
+        margin-top: 20px;
+      }
+    }
+    
+    /* Data Flow Animation */
+    .data-stream {
+      position: absolute;
+      background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+      height: 2px;
+      width: 50px;
+      border-radius: 2px;
+      opacity: 0;
+      box-shadow: 0 0 8px var(--primary-color);
+      z-index: 100;
+      transform-origin: left center;
+      animation: flow 2s linear forwards;
+    }
+    
+    @keyframes flow {
+      0% { opacity: 0.8; transform: translateX(0) scaleX(0.2); }
+      50% { opacity: 1; transform: translateX(100px) scaleX(1); }
+      100% { opacity: 0.8; transform: translateX(200px) scaleX(0.2); }
+    }
+    
+    /* Tooltip Styling */
+    [data-tooltip] {
+      position: relative;
+    }
+    
+    [data-tooltip]::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(8, 8, 48, 0.9);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      border: 1px solid var(--primary-color);
+      box-shadow: var(--glow-primary);
+      z-index: 1000;
+    }
+    
+    [data-tooltip]:hover::after {
+      opacity: 1;
+      visibility: visible;
+    }
+  </style>
+</head>
+<body class="no-scroll">
+  <!-- 3D Visualization Container -->
+  <div id="visualization-container"></div>
+  
+  <!-- Interface Container -->
+  <div class="interface-container">
+    <header class="header">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z" fill="white"/>
+            <path d="M12 6C8.69 6 6 8.69 6 12C6 15.31 8.69 18 12 18C15.31 18 18 15.31 18 12C18 8.69 15.31 6 12 6ZM12 16C9.79 16 8 14.21 8 12C8 9.79 9.79 8 12 8C14.21 8 16 9.79 16 12C16 14.21 14.21 16 12 16Z" fill="white"/>
+          </svg>
+        </div>
+        <div>NeuroFusion<span>OS</span></div>
+      </div>
+      
+      <div class="nav-controls">
+        <div class="nav-item active" data-tooltip="Primary Dashboard">DASHBOARD</div>
+        <div class="nav-item" data-tooltip="Neural Network Analysis">NEURAL</div>
+        <div class="nav-item" data-tooltip="Quantum Simulator">QUANTUM</div>
+        <div class="nav-item" data-tooltip="Memory Vectors">MEMORY</div>
+        <div class="nav-item" data-tooltip="Active Agents">AGENTS</div>
+      </div>
+      
+      <div class="system-status">
+        <div class="status-badge">
+          <div class="status-indicator"></div>
+          <div class="status-text">SYSTEM OPERATIONAL</div>
+        </div>
+      </div>
+    </header>
+    
+    <div class="left-panel">
+      <div class="panel-section">
+        <div class="panel-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 3H4C3.45 3 3 3.45 3 4V10C3 10.55 3.45 11 4 11H10C10.55 11 11 10.55 11 10V4C11 3.45 10.55 3 10 3ZM9 9H5V5H9V9Z" fill="#00f0ff"/>
+            <path d="M20 3H14C13.45 3 13 3.45 13 4V10C13 10.55 13.45 11 14 11H20C20.55 11 21 10.55 21 10V4C21 3.45 20.55 3 20 3ZM19 9H15V5H19V9Z" fill="#00f0ff"/>
+            <path d="M10 13H4C3.45 13 3 13.45 3 14V20C3 20.55 3.45 21 4 21H10C10.55 21 11 20.55 11 20V14C11 13.45 10.55 13 10 13ZM9 19H5V15H9V19Z" fill="#00f0ff"/>
+            <path d="M14 13H20C20.55 13 21 13.45 21 14V20C21 20.55 20.55 21 20 21H14C13.45 21 13 20.55 13 20V14C13 13.45 13.45 13 14 13ZM15 15V19H19V15H15Z" fill="#00f0ff"/>
+          </svg>
+          System Stats
+        </div>
+        <div class="panel-content">
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-value" id="active-agents-count">3</div>
+              <div class="stat-label">Active Agents</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="memory-count">42</div>
+              <div class="stat-label">Memory Vectors</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="qubit-count">5</div>
+              <div class="stat-label">Qubits</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="uptime">01:34</div>
+              <div class="stat-label">Uptime</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="panel-section">
+        <div class="panel-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 11C17.66 11 18.99 9.66 18.99 8C18.99 6.34 17.66 5 16 5C14.34 5 13 6.34 13 8C13 9.66 14.34 11 16 11Z" fill="#00f0ff"/>
+            <path d="M8 11C9.66 11 10.99 9.66 10.99 8C10.99 6.34 9.66 5 8 5C6.34 5 5 6.34 5 8C5 9.66 6.34 11 8 11Z" fill="#00f0ff"/>
+            <path d="M8 13C5.67 13 1 14.17 1 16.5V19H15V16.5C15 14.17 10.33 13 8 13Z" fill="#00f0ff"/>
+            <path d="M16 13C15.71 13 15.38 13.02 15.03 13.05C16.19 13.89 17 15.02 17 16.5V19H23V16.5C23 14.17 18.33 13 16 13Z" fill="#00f0ff"/>
+          </svg>
+          Active Agents
+        </div>
+        <div class="panel-content">
+          <div class="agent-list">
+            <div class="agent-item">
+              <div class="agent-indicator"></div>
+              <div class="agent-name">Core Reasoning Agent</div>
+              <div class="agent-action">Details</div>
+            </div>
+            <div class="agent-item">
+              <div class="agent-indicator"></div>
+              <div class="agent-name">Memory Indexing Agent</div>
+              <div class="agent-action">Details</div>
+            </div>
+            <div class="agent-item">
+              <div class="agent-indicator"></div>
+              <div class="agent-name">Interface Management Agent</div>
+              <div class="agent-action">Details</div>
+            </div>
+            <div class="agent-item">
+              <div class="agent-indicator" style="background-color: var(--background-dark);"></div>
+              <div class="agent-name">Quantum Enhancement Agent</div>
+              <div class="agent-action">Activate</div>
+            </div>
+            <div class="agent-item">
+              <div class="agent-indicator" style="background-color: var(--background-dark);"></div>
+              <div class="agent-name">Multi-Modal Integration Agent</div>
+              <div class="agent-action">Activate</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="main-area">
+      <div class="visualization-overlay">
+        <div class="viz-control" id="toggle-neural">Neural View</div>
+        <div class="viz-control" id="toggle-quantum">Quantum View</div>
+        <div class="viz-control" id="toggle-memory">Memory Map</div>
+        <div class="viz-control" id="reset-view">Reset View</div>
+      </div>
+    </div>
+    
+    <div class="right-panel">
+      <div class="panel-section">
+        <div class="panel-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z" fill="#7700ff"/>
+            <path d="M12 11.39C11.39 11.39 10.89 11.89 10.89 12.5C10.89 13.11 11.39 13.61 12 13.61C12.61 13.61 13.11 13.11 13.11 12.5C13.11 11.89 12.61 11.39 12 11.39Z" fill="#7700ff"/>
+            <path d="M7.17 14.75L14.75 7.17C15.14 6.78 15.14 6.14 14.75 5.75C14.36 5.36 13.72 5.36 13.33 5.75L5.75 13.33C5.36 13.72 5.36 14.36 5.75 14.75C6.14 15.14 6.78 15.14 7.17 14.75Z" fill="#7700ff"/>
+            <path d="M7.5 10.5C8.33 10.5 9 9.83 9 9C9 8.17 8.33 7.5 7.5 7.5C6.67 7.5 6 8.17 6 9C6 9.83 6.67 10.5 7.5 10.5Z" fill="#7700ff"/>
+            <path d="M16.5 13.5C15.67 13.5 15 14.17 15 15C15 15.83 15.67 16.5 16.5 16.5C17.33 16.5 18 15.83 18 15C18 14.17 17.33 13.5 16.5 13.5Z" fill="#7700ff"/>
+          </svg>
+          Quantum State
+        </div>
+        <div class="quantum-stats">
+          <div class="quantum-stat">
+            <div class="quantum-label">State Vector Dimension</div>
+            <div class="quantum-value">32</div>
+            <div class="quantum-description">Superposition of 32 basis states (5 qubits)</div>
+            
+            <div class="quantum-visual">
+              <div class="probability-bar">
+                <div class="prob-column" style="--height: 0.25;"></div>
+                <div class="prob-column" style="--height: 0.15;"></div>
+                <div class="prob-column" style="--height: 0.75;"></div>
+                <div class="prob-column" style="--height: 0.45;"></div>
+                <div class="prob-column" style="--height: 0.65;"></div>
+                <div class="prob-column" style="--height: 0.35;"></div>
+                <div class="prob-column" style="--height: 0.15;"></div>
+                <div class="prob-column" style="--height: 0.85;"></div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="quantum-stat">
+            <div class="quantum-label">Entanglement Factor</div>
+            <div class="quantum-value">0.76</div>
+            <div class="quantum-description">High degree of quantum entanglement across reasoning paths</div>
+          </div>
+          
+          <div class="quantum-stat">
+            <div class="quantum-label">Interference Pattern</div>
+            <div class="quantum-value">Constructive</div>
+            <div class="quantum-description">Quantum interference is enhancing primary reasoning pathways</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="panel-section">
+        <div class="panel-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9 17H7V10H9V17ZM13 17H11V7H13V17ZM17 17H15V13H17V17ZM19 19H5V5H19V19.1M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3Z" fill="#7700ff"/>
+          </svg>
+          Recent Memories
+        </div>
+        <div class="memory-items">
+          <div class="memory-item">
+            <div class="memory-type">System</div>
+            <div class="memory-content">NeuroFusionOS initialized with quantum reasoning capabilities</div>
+            <div class="memory-meta">
+              <div>2 min ago</div>
+              <div>ID: mem-a1b2c3</div>
+            </div>
+          </div>
+          
+          <div class="memory-item">
+            <div class="memory-type">Query</div>
+            <div class="memory-content">Explain quantum-neural hybrid computing</div>
+            <div class="memory-meta">
+              <div>45 sec ago</div>
+              <div>ID: mem-d4e5f6</div>
+            </div>
+          </div>
+          
+          <div class="memory-item">
+            <div class="memory-type">Reasoning</div>
+            <div class="memory-content">Applied superposition to explore multiple reasoning paths simultaneously</div>
+            <div class="memory-meta">
+              <div>30 sec ago</div>
+              <div>ID: mem-g7h8i9</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="command-area">
+      <div class="command-input-area">
+        <input type="text" class="command-input" id="command-input" placeholder="Enter your query or command...">
+        <button class="command-button" id="command-button">PROCESS</button>
+      </div>
+      
+      <div class="response-area" id="response-area">
+        <div class="response-item">
+          <div class="response-query">System: Initialization Complete</div>
+          <div class="response-result">NeuroFusionOS is initialized and ready. The hybrid quantum-neural system is operational with 5 qubits and 32 state dimensions. All core agents are active and the memory subsystem is online.</div>
+          <div class="response-meta">
+            <span>Confidence: 100%</span>
+            <span>Processing Time: 0.12s</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // DOM elements
+    const statusIndicator = document.querySelector('.status-indicator');
+    const activeAgentsCount = document.getElementById('active-agents-count');
+    const memoryCount = document.getElementById('memory-count');
+    const qubitCount = document.getElementById('qubit-count');
+    const commandInput = document.getElementById('command-input');
+    const commandButton = document.getElementById('command-button');
+    const responseArea = document.getElementById('response-area');
+    const toggleNeural = document.getElementById('toggle-neural');
+    const toggleQuantum = document.getElementById('toggle-quantum');
+    const toggleMemory = document.getElementById('toggle-memory');
+    const resetView = document.getElementById('reset-view');
+    
+    // Three.js visualization
+    let container, scene, camera, renderer, controls;
+    let composer, bloomPass;
+    let neurons = [];
+    let connections = [];
+    let qubitNodes = [];
+    let qubitLines = [];
+    let synapseParticles = [];
+    
+    // Configuration
+    const config = {
+      neuronsCount: 100,
+      connectionsCount: 150,
+      neuronSize: 0.3,
+      particlesCount: 300,
+      visualizationMode: 'neural' // neural, quantum, memory
+    };
+    
+    // Initialize Three.js
+    function initVisualization() {
+      // Container element
+      container = document.getElementById('visualization-container');
+      
+      // Create scene
+      scene = new THREE.Scene();
+      
+      // Camera
+      camera = new THREE.PerspectiveCamera(
+        60,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      camera.position.z = 30;
+      
+      // Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setClearColor(0x000010, 0);
+      container.appendChild(renderer.domElement);
+      
+      // Controls
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.rotateSpeed = 0.5;
+      
+      // Add lighting
+      const ambientLight = new THREE.AmbientLight(0x111122, 0.8);
+      scene.add(ambientLight);
+      
+      const pointLight1 = new THREE.PointLight(0x00f0ff, 1, 50);
+      pointLight1.position.set(10, 10, 10);
+      scene.add(pointLight1);
+      
+      const pointLight2 = new THREE.PointLight(0x7700ff, 1, 50);
+      pointLight2.position.set(-10, -10, 10);
+      scene.add(pointLight2);
+      
+      // Post-processing
+      composer = new THREE.EffectComposer(renderer);
+      const renderPass = new THREE.RenderPass(scene, camera);
+      composer.addPass(renderPass);
+      
+      bloomPass = new THREE.UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        1.5, // strength
+        0.4, // radius
+        0.85 // threshold
+      );
+      composer.addPass(bloomPass);
+      
+      // Initial visualization content
+      createNeuralNetwork();
+      
+      // Handle window resize
+      window.addEventListener('resize', onWindowResize);
+      
+      // Start animation loop
+      animate();
+    }
+    
+    function createNeuralNetwork() {
+      // Clear existing content
+      clearVisualization();
+      
+      // Create neurons
+      const neuronMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0x00f0ff,
+        emissive: 0x00f0ff,
+        emissiveIntensity: 0.3,
+        shininess: 100
+      });
+      
+      const neuronGeometry = new THREE.SphereGeometry(config.neuronSize, 16, 16);
+      
+      for (let i = 0; i < config.neuronsCount; i++) {
+        const neuron = new THREE.Mesh(neuronGeometry, neuronMaterial);
+        
+        // Position randomly in a 3D space but with some structure
+        const layer = Math.floor(i / 20); // Create 5 layers
+        const layerSpacing = 10;
+        
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 2 + Math.random() * 5;
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        const z = layer * layerSpacing - (layerSpacing * 2);
+        
+        neuron.position.set(x, y, z);
+        
+        // Add random motion data
+        neuron.userData = {
+          originalPosition: { x, y, z },
+          velocity: {
+            x: (Math.random() - 0.5) * 0.01,
+            y: (Math.random() - 0.5) * 0.01,
+            z: (Math.random() - 0.5) * 0.01
+          },
+          phase: Math.random() * Math.PI * 2,
+          pulsing: Math.random() > 0.7, // Only some neurons pulse
+          layer
+        };
+        
+        scene.add(neuron);
+        neurons.push(neuron);
+      }
+      
+      // Create connections between neurons
+      const connectionMaterial = new THREE.LineBasicMaterial({ 
+        color: 0x00f0ff,
+        transparent: true,
+        opacity: 0.2,
+        linewidth: 1
+      });
+      
+      // Connect neurons primarily within their layers and to adjacent layers
+      for (let i = 0; i < config.connectionsCount; i++) {
+        let neuron1, neuron2;
+        
+        if (Math.random() > 0.7) {
+          // Inter-layer connection
+          const layer1 = Math.floor(Math.random() * 4); // 0 to 4
+          const layer2 = layer1 + 1; // Connect to next layer
+          
+          // Find neurons in these layers
+          const layer1Neurons = neurons.filter(n => n.userData.layer === layer1);
+          const layer2Neurons = neurons.filter(n => n.userData.layer === layer2);
+          
+          if (layer1Neurons.length > 0 && layer2Neurons.length > 0) {
+            neuron1 = layer1Neurons[Math.floor(Math.random() * layer1Neurons.length)];
+            neuron2 = layer2Neurons[Math.floor(Math.random() * layer2Neurons.length)];
+          } else continue;
+        } else {
+          // Intra-layer connection
+          const layer = Math.floor(Math.random() * 5);
+          const layerNeurons = neurons.filter(n => n.userData.layer === layer);
+          
+          if (layerNeurons.length > 1) {
+            neuron1 = layerNeurons[Math.floor(Math.random() * layerNeurons.length)];
+            do {
+              neuron2 = layerNeurons[Math.floor(Math.random() * layerNeurons.length)];
+            } while (neuron1 === neuron2);
+          } else continue;
+        }
+        
+        // Create line geometry
+        const points = [
+          neuron1.position.clone(),
+          neuron2.position.clone()
+        ];
+        
+        const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+        const line = new THREE.Line(lineGeometry, connectionMaterial);
+        
+        // Add metadata
+        line.userData = {
+          startNeuron: neuron1,
+          endNeuron: neuron2,
+          active: false,
+          pulsePhase: Math.random() * Math.PI * 2,
+          pulseSpeed: 0.05 + Math.random() * 0.1,
+          color: new THREE.Color(0x00f0ff),
+          line: line
+        };
+        
+        scene.add(line);
+        connections.push(line);
+      }
+      
+      // Add synapse particles
+      const particleGeometry = new THREE.BufferGeometry();
+      const particlePositions = new Float32Array(config.particlesCount * 3);
+      const particleSizes = new Float32Array(config.particlesCount);
+      
+      // Random positions in the neural network volume
+      for (let i = 0; i < config.particlesCount; i++) {
+        const i3 = i * 3;
+        particlePositions[i3] = (Math.random() - 0.5) * 20;
+        particlePositions[i3 + 1] = (Math.random() - 0.5) * 20;
+        particlePositions[i3 + 2] = (Math.random() - 0.5) * 40 - 10;
+        
+        // Random sizes
+        particleSizes[i] = Math.random() * 0.5 + 0.1;
+      }
+      
+      particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+      particleGeometry.setAttribute('size', new THREE.BufferAttribute(particleSizes, 1));
+      
+      // Particle shader material
+      const particleMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+          time: { value: 0 },
+          color: { value: new THREE.Color(0x00f0ff) }
+        },
+        vertexShader: `
+          attribute float size;
+          uniform float time;
+          
+          varying vec3 vColor;
+          
+          void main() {
+            vColor = vec3(0.0, 0.94, 1.0); // Color in RGB normalized
+            
+            // Position with some subtle animation
+            vec3 pos = position;
+            pos.x += sin(time * 0.5 + position.z * 0.3) * 0.2;
+            pos.y += cos(time * 0.5 + position.x * 0.3) * 0.2;
+            
+            vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+            
+            // Size attenuation
+            gl_PointSize = size * (100.0 / -mvPosition.z);
+            gl_Position = projectionMatrix * mvPosition;
+          }
+        `,
+        fragmentShader: `
+          varying vec3 vColor;
+          
+          void main() {
+            // Create a circular particle
+            vec2 center = gl_PointCoord - vec2(0.5);
+            float dist = length(center);
+            
+            // Discard pixels outside the circle
+            if (dist > 0.5) {
+              discard;
+            }
+            
+            // Glow effect
+            float alpha = 1.0 - smoothstep(0.0, 0.5, dist);
+            
+            gl_FragColor = vec4(vColor, alpha);
+          }
+        `,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      });
+      
+      const particles = new THREE.Points(particleGeometry, particleMaterial);
+      scene.add(particles);
+      synapseParticles.push({
+        points: particles,
+        time: 0
+      });
+    }
+    
+    function createQuantumVisualization() {
+      // Clear existing content
+      clearVisualization();
+      
+      // Create a quantum circuit-like visualization
+      const qubits = 5;
+      const steps = 10;
+      const qubitSpacing = 3;
+      const stepSpacing = 4;
+      
+      // Create qubits (horizontal lines)
+      const qubitMaterial = new THREE.LineBasicMaterial({ 
+        color: 0x7700ff, 
+        opacity: 0.7,
+        transparent: true 
+      });
+      
+      for (let i = 0; i < qubits; i++) {
+        const points = [
+          new THREE.Vector3(-stepSpacing * 3, i * qubitSpacing - (qubits * qubitSpacing) / 2, 0),
+          new THREE.Vector3(stepSpacing * (steps + 1), i * qubitSpacing - (qubits * qubitSpacing) / 2, 0)
+        ];
+        
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const line = new THREE.Line(geometry, qubitMaterial);
+        scene.add(line);
+        qubitLines.push(line);
+      }
+      
+      // Create quantum gates
+      const gateTypes = ['H', 'X', 'Z', 'CNOT', 'T', 'S'];
+      const gateMaterials = {
+        H: new THREE.MeshPhongMaterial({ color: 0x00f0ff, emissive: 0x00f0ff, emissiveIntensity: 0.3 }),
+        X: new THREE.MeshPhongMaterial({ color: 0xff00aa, emissive: 0xff00aa, emissiveIntensity: 0.3 }),
+        Z: new THREE.MeshPhongMaterial({ color: 0x7700ff, emissive: 0x7700ff, emissiveIntensity: 0.3 }),
+        CNOT: new THREE.MeshPhongMaterial({ color: 0xffcc00, emissive: 0xffcc00, emissiveIntensity: 0.3 }),
+        T: new THREE.MeshPhongMaterial({ color: 0x00ffa3, emissive: 0x00ffa3, emissiveIntensity: 0.3 }),
+        S: new THREE.MeshPhongMaterial({ color: 0xff2266, emissive: 0xff2266, emissiveIntensity: 0.3 })
+      };
+      
+      // Place gates randomly
+      for (let step = 0; step < steps; step++) {
+        for (let i = 0; i < qubits; i++) {
+          // Skip some positions to make it look more realistic
+          if (Math.random() < 0.4) continue;
+          
+          const gateType = gateTypes[Math.floor(Math.random() * gateTypes.length)];
+          let geometry;
+          
+          switch (gateType) {
+            case 'H':
+            case 'X':
+            case 'Z':
+            case 'T':
+            case 'S':
+              geometry = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+              break;
+            case 'CNOT':
+              geometry = new THREE.SphereGeometry(0.8, 16, 16);
+              break;
+          }
+          
+          const gate = new THREE.Mesh(geometry, gateMaterials[gateType]);
+          gate.position.set(
+            step * stepSpacing,
+            i * qubitSpacing - (qubits * qubitSpacing) / 2,
+            0
+          );
+          
+          // Add gate metadata
+          gate.userData = {
+            type: gateType,
+            qubit: i,
+            step: step,
+            phase: Math.random() * Math.PI * 2,
+            pulsing: true
+          };
+          
+          scene.add(gate);
+          qubitNodes.push(gate);
+          
+          // For CNOT gates, add a control line to another qubit
+          if (gateType === 'CNOT' && i < qubits - 1) {
+            const targetQubit = i + 1;
+            const controlPoints = [
+              new THREE.Vector3(
+                step * stepSpacing,
+                i * qubitSpacing - (qubits * qubitSpacing) / 2,
+                0
+              ),
+              new THREE.Vector3(
+                step * stepSpacing,
+                targetQubit * qubitSpacing - (qubits * qubitSpacing) / 2,
+                0
+              )
+            ];
+            
+            const controlGeometry = new THREE.BufferGeometry().setFromPoints(controlPoints);
+            const controlLine = new THREE.Line(
+              controlGeometry,
+              new THREE.LineBasicMaterial({ color: 0xffcc00, opacity: 0.8, transparent: true })
+            );
+            
+            scene.add(controlLine);
+            qubitLines.push(controlLine);
+            
+            // Add target gate
+            const targetGate = new THREE.Mesh(
+              new THREE.CircleGeometry(0.8, 16),
+              new THREE.MeshBasicMaterial({ color: 0xffcc00, opacity: 0.8, transparent: true })
+            );
+            
+            targetGate.position.set(
+              step * stepSpacing,
+              targetQubit * qubitSpacing - (qubits * qubitSpacing) / 2,
+              0
+            );
+            targetGate.rotation.x = Math.PI / 2;
+            
+            scene.add(targetGate);
+            qubitNodes.push(targetGate);
+          }
+        }
+      }
+      
+      // Add some particles for quantum state
+      const particleGeometry = new THREE.BufferGeometry();
+      const particleCount = 200;
+      const particlePositions = new Float32Array(particleCount * 3);
+      const particleSizes = new Float32Array(particleCount);
+      
+      for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        // Position particles around the quantum circuit
+        particlePositions[i3] = (Math.random() - 0.5) * stepSpacing * steps * 1.5;
+        particlePositions[i3 + 1] = (Math.random() - 0.5) * qubitSpacing * qubits * 1.5;
+        particlePositions[i3 + 2] = (Math.random() - 0.5) * 10;
+        
+        // Random sizes
+        particleSizes[i] = Math.random() * 0.5 + 0.1;
+      }
+      
+      particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+      particleGeometry.setAttribute('size', new THREE.BufferAttribute(particleSizes, 1));
+      
+      // Particle shader material for quantum states
+      const particleMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+          time: { value: 0 }
+        },
+        vertexShader: `
+          attribute float size;
+          uniform float time;
+          
+          varying vec3 vColor;
+          
+          void main() {
+            // Color based on position
+            float hue = position.x * 0.02 + time * 0.1;
+            
+            // Convert HSL to RGB (simplified)
+            float h = mod(hue, 1.0);
+            float c = 1.0;
+            float x = c * (1.0 - abs(mod(h * 6.0, 2.0) - 1.0));
+            
+            if (h < 1.0/6.0) vColor = vec3(c, x, 0.0);
+            else if (h < 2.0/6.0) vColor = vec3(x, c, 0.0);
+            else if (h < 3.0/6.0) vColor = vec3(0.0, c, x);
+            else if (h < 4.0/6.0) vColor = vec3(0.0, x, c);
+            else if (h < 5.0/6.0) vColor = vec3(x, 0.0, c);
+            else vColor = vec3(c, 0.0, x);
+            
+            // Mix with purples and cyans for quantum look
+            vColor = mix(vColor, vec3(0.4, 0.0, 0.8), 0.5);
+            
+            // Quantum wave-like movement
+            vec3 pos = position;
+            float amplitude = 0.5;
+            pos.x += sin(time + position.y * 2.0) * amplitude;
+            pos.y += cos(time + position.x * 2.0) * amplitude;
+            pos.z += sin(time * 1.5 + position.x * position.y * 0.01) * amplitude;
+            
+            vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+            gl_PointSize = size * (80.0 / -mvPosition.z);
+            gl_Position = projectionMatrix * mvPosition;
+          }
+        `,
+        fragmentShader: `
+          varying vec3 vColor;
+          
+          void main() {
+            vec2 center = gl_PointCoord - vec2(0.5);
+            float dist = length(center);
+            if (dist > 0.5) discard;
+            
+            float alpha = 1.0 - smoothstep(0.0, 0.5, dist);
+            gl_FragColor = vec4(vColor, alpha);
+          }
+        `,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      });
+      
+      const particles = new THREE.Points(particleGeometry, particleMaterial);
+      scene.add(particles);
+      synapseParticles.push({
+        points: particles,
+        time: 0
+      });
+    }
+    
+    function createMemoryVisualization() {
+      // Clear existing visualization
+      clearVisualization();
+      
+      // Create a 3D representation of memory vectors
+      const numVectors = 50;
+      const vectorDimension = 16; // Simplified from 128 for visualization
+      
+      // Create a single geometry and material for all memory nodes
+      const nodeGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+      const nodeMaterial = new THREE.MeshPhongMaterial({
+        color: 0xff00aa,
+        emissive: 0xff00aa,
+        emissiveIntensity: 0.3,
+        transparent: true,
+        opacity: 0.8
+      });
+      
+      // Create memory nodes
+      const memories = [];
+      for (let i = 0; i < numVectors; i++) {
+        // Create a simplified vector (just for visualization)
+        const vector = new Array(vectorDimension).fill(0).map(() => Math.random() * 2 - 1);
+        
+        // Project to 3D using the first 3 dimensions (simplified)
+        // In a real system, use dimensionality reduction like t-SNE or UMAP
+        const position = new THREE.Vector3(
+          vector[0] * 15, // Scale for visibility
+          vector[1] * 15,
+          vector[2] * 15
+        );
+        
+        // Create memory node
+        const node = new THREE.Mesh(nodeGeometry, nodeMaterial);
+        node.position.copy(position);
+        
+        // Add metadata
+        node.userData = {
+          id: `mem-${i.toString(16).padStart(8, '0')}`,
+          vector,
+          type: ['query', 'result', 'system'][Math.floor(Math.random() * 3)],
+          timestamp: Date.now() - Math.floor(Math.random() * 1000000),
+          phase: Math.random() * Math.PI * 2,
+          pulsing: true
+        };
+        
+        scene.add(node);
+        memories.push(node);
+        neurons.push(node); // Add to the neurons array for animation
+      }
+      
+      // Create connections between similar memories
+      const connectionMaterial = new THREE.LineBasicMaterial({
+        color: 0xff00aa,
+        transparent: true,
+        opacity: 0.2
+      });
+      
+      // Calculate similarity between vectors
+      for (let i = 0; i < memories.length; i++) {
+        for (let j = i + 1; j < memories.length; j++) {
+          // Calculate cosine similarity between vectors
+          const vec1 = memories[i].userData.vector;
+          const vec2 = memories[j].userData.vector;
+          
+          let dotProduct = 0;
+          for (let k = 0; k < vectorDimension; k++) {
+            dotProduct += vec1[k] * vec2[k];
+          }
+          
+          // Normalize by vector lengths
+          const len1 = Math.sqrt(vec1.reduce((sum, val) => sum + val * val, 0));
+          const len2 = Math.sqrt(vec2.reduce((sum, val) => sum + val * val, 0));
+          
+          const similarity = dotProduct / (len1 * len2);
+          
+          // Only connect memories that are similar enough
+          if (similarity > 0.8) {
+            const points = [
+              memories[i].position.clone(),
+              memories[j].position.clone()
+            ];
+            
+            const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(lineGeometry, connectionMaterial);
+            
+            // Add metadata
+            line.userData = {
+              startNode: memories[i],
+              endNode: memories[j],
+              similarity,
+              active: false
+            };
+            
+            scene.add(line);
+            connections.push(line);
+          }
+        }
+      }
+      
+      // Add memory dimension labels
+      const fontLoader = new THREE.FontLoader();
+      const dimensionLabels = ["Content", "Context", "Time", "Relevance", "Semantics", "Emotions"];
+      
+      // Create axis lines for the main dimensions
+      const axisLength = 20;
+      const axisColor = 0xff00aa;
+      
+      // X axis
+      const xAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-axisLength/2, 0, 0),
+        new THREE.Vector3(axisLength/2, 0, 0)
+      ]);
+      const xAxis = new THREE.Line(xAxisGeometry, new THREE.LineBasicMaterial({ color: axisColor, opacity: 0.3, transparent: true }));
+      scene.add(xAxis);
+      
+      // Y axis
+      const yAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, -axisLength/2, 0),
+        new THREE.Vector3(0, axisLength/2, 0)
+      ]);
+      const yAxis = new THREE.Line(yAxisGeometry, new THREE.LineBasicMaterial({ color: axisColor, opacity: 0.3, transparent: true }));
+      scene.add(yAxis);
+      
+      // Z axis
+      const zAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 0, -axisLength/2),
+        new THREE.Vector3(0, 0, axisLength/2)
+      ]);
+      const zAxis = new THREE.Line(zAxisGeometry, new THREE.LineBasicMaterial({ color: axisColor, opacity: 0.3, transparent: true }));
+      scene.add(zAxis);
+    }
+    
+    function clearVisualization() {
+      // Remove all existing elements
+      neurons.forEach(neuron => scene.remove(neuron));
+      connections.forEach(connection => scene.remove(connection));
+      qubitNodes.forEach(node => scene.remove(node));
+      qubitLines.forEach(line => scene.remove(line));
+      synapseParticles.forEach(particle => scene.remove(particle.points));
+      
+      neurons = [];
+      connections = [];
+      qubitNodes = [];
+      qubitLines = [];
+      synapseParticles = [];
+    }
+    
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      composer.setSize(window.innerWidth, window.innerHeight);
+    }
+    
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      const time = performance.now() * 0.001; // Time in seconds
+      
+      // Update controls
+      controls.update();
+      
+      // Update neurons
+      neurons.forEach(neuron => {
+        if (neuron.userData.pulsing) {
+          // Pulsing effect
+          const scale = 1 + 0.2 * Math.sin(time * 2 + neuron.userData.phase);
+          neuron.scale.set(scale, scale, scale);
+          
+          // Subtle color change
+          if (neuron.material.emissive) {
+            const hue = (time * 0.1 + neuron.userData.phase) % 1;
+            const color = new THREE.Color().setHSL(hue, 0.8, 0.5);
+            neuron.material.emissive.copy(color);
+            neuron.material.emissiveIntensity = 0.3 + 0.2 * Math.sin(time + neuron.userData.phase);
+          }
+        }
+        
+        // Apply small movement
+        if (neuron.userData.originalPosition) {
+          neuron.position.x = neuron.userData.originalPosition.x + Math.sin(time + neuron.userData.phase) * 0.2;
+          neuron.position.y = neuron.userData.originalPosition.y + Math.cos(time + neuron.userData.phase * 1.3) * 0.2;
+          neuron.position.z = neuron.userData.originalPosition.z + Math.sin(time * 0.7 + neuron.userData.phase) * 0.2;
+        }
+      });
+      
+      // Update connections
+      connections.forEach(connection => {
+        // Update connection positions if the neurons moved
+        if (connection.userData && connection.userData.startNeuron && connection.userData.endNeuron) {
+          // For LineSegments
+          if (connection.geometry.attributes && connection.geometry.attributes.position) {
+            const positions = connection.geometry.attributes.position.array;
+            positions[0] = connection.userData.startNeuron.position.x;
+            positions[1] = connection.userData.startNeuron.position.y;
+            positions[2] = connection.userData.startNeuron.position.z;
+            positions[3] = connection.userData.endNeuron.position.x;
+            positions[4] = connection.userData.endNeuron.position.y;
+            positions[5] = connection.userData.endNeuron.position.z;
+            connection.geometry.attributes.position.needsUpdate = true;
+          }
+          // For Line
+          else if (connection.geometry instanceof THREE.BufferGeometry) {
+            const points = [
+              connection.userData.startNeuron.position.clone(),
+              connection.userData.endNeuron.position.clone()
+            ];
+            connection.geometry.setFromPoints(points);
+          }
+          
+          // Animate active connections
+          if (connection.userData.active) {
+            connection.material.opacity = 0.1 + 0.7 * Math.sin(time * 5 + connection.userData.pulsePhase);
+          } else {
+            connection.material.opacity = 0.2;
+          }
+        }
+      });
+      
+      // Update synaptic particles
+      synapseParticles.forEach(particle => {
+        particle.time += 0.01;
+        if (particle.points.material.uniforms) {
+          particle.points.material.uniforms.time.value = particle.time;
+        }
+      });
+      
+      // Render scene with post-processing
+      composer.render();
+    }
+    
+    // Event handlers
+    toggleNeural.addEventListener('click', () => {
+      config.visualizationMode = 'neural';
+      createNeuralNetwork();
+    });
+    
+    toggleQuantum.addEventListener('click', () => {
+      config.visualizationMode = 'quantum';
+      createQuantumVisualization();
+    });
+    
+    toggleMemory.addEventListener('click', () => {
+      config.visualizationMode = 'memory';
+      createMemoryVisualization();
+    });
+    
+    resetView.addEventListener('click', () => {
+      controls.reset();
+    });
+    
+    // Process query
+    async function processQuery(query) {
+      try {
+        // Show loading state
+        responseArea.classList.add('loading');
+        
+        // Simulate a fetch to the API
+        const startTime = performance.now();
+        
+        // Create fake data flow effects
+        createDataFlowEffects();
+        
+        // Activate random neural connections
+        activateRandomConnections(15);
+        
+        // Wait for simulation
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Create a simulated response
+        const processingTime = ((performance.now() - startTime) / 1000).toFixed(2);
+        
+        // Generate a response based on the query
+        let response, confidence, quantumEffects;
+        
+        if (query.toLowerCase().includes('quantum')) {
+          response = "Quantum computing leverages quantum mechanical phenomena like superposition and entanglement to perform computations. In NeuroFusionOS, quantum principles enhance neural reasoning by exploring multiple pathways simultaneously through a quantum-inspired computational framework. This allows for more robust decision-making with higher confidence levels and greater resistance to local optima.";
+          confidence = 0.95;
+          quantumEffects = [
+            { type: 'superposition_advantage', description: 'Quantum superposition enabled exploration of 32 reasoning paths simultaneously' },
+            { type: 'entanglement_effect', description: 'Quantum entanglement linked concept pairs for coherent reasoning' }
+          ];
+        } else if (query.toLowerCase().includes('neural')) {
+          response = "NeuroFusionOS's neural architecture uses advanced multi-layered networks with quantum-enhanced connections. The system dynamically forms new neural pathways based on input patterns and applies quantum superposition to evaluate multiple potential connections simultaneously. This results in a hybrid architecture that combines the pattern recognition strengths of neural networks with the exploratory advantages of quantum computing.";
+          confidence = 0.92;
+          quantumEffects = [
+            { type: 'constructive_interference', description: 'Constructive quantum interference amplified the neural pathway strengths' }
+          ];
+        } else if (query.toLowerCase().includes('memory')) {
+          response = "The memory subsystem in NeuroFusionOS utilizes quantum-enhanced vector embeddings in a 128-dimensional space. These vectors represent knowledge, experiences, and reasoning patterns with quantum superposition allowing for fuzzy memory matching. The system applies quantum interference to enhance relevant memories while suppressing less relevant ones during retrieval, resulting in more contextually appropriate responses.";
+          confidence = 0.89;
+          quantumEffects = [
+            { type: 'quantum_accessibility', description: 'Quantum memory access retrieved information from 42 dimensional vectors simultaneously' }
+          ];
+        } else {
+          response = "NeuroFusionOS is a cutting-edge quantum-neural hybrid system that combines advanced neural networks with quantum computing principles. It leverages quantum superposition and entanglement to enhance classical reasoning, allowing for simultaneous exploration of multiple reasoning paths and creating a more robust decision-making framework with higher confidence evaluations.";
+          confidence = 0.87;
+          quantumEffects = [
+            { type: 'quantum_enhancement', description: 'Applied quantum reasoning principles to formulate response' }
+          ];
+        }
+        
+        // Remove loading state
+        responseArea.classList.remove('loading');
+        
+        // Create response element
+        const responseItem = document.createElement('div');
+        responseItem.className = 'response-item';
+        
+        // Add query
+        const responseQuery = document.createElement('div');
+        responseQuery.className = 'response-query';
+        responseQuery.textContent = `You: ${query}`;
+        responseItem.appendChild(responseQuery);
+        
+        // Add result
+        const responseResult = document.createElement('div');
+        responseResult.className = 'response-result';
+        responseResult.textContent = response;
+        responseItem.appendChild(responseResult);
+        
+        // Add metadata
+        const responseMeta = document.createElement('div');
+        responseMeta.className = 'response-meta';
+        
+        const confidenceSpan = document.createElement('span');
+        confidenceSpan.textContent = `Confidence: ${Math.round(confidence * 100)}%`;
+        responseMeta.appendChild(confidenceSpan);
+        
+        const timeSpan = document.createElement('span');
+        timeSpan.textContent = `Processing Time: ${processingTime}s`;
+        responseMeta.appendChild(timeSpan);
+        
+        responseItem.appendChild(responseMeta);
+        
+        // Add quantum effects if present
+        if (quantumEffects && quantumEffects.length > 0) {
+          const quantumEffectsDiv = document.createElement('div');
+          quantumEffectsDiv.className = 'quantum-effects';
+          
+          const quantumTitle = document.createElement('div');
+          quantumTitle.className = 'quantum-effects-title';
+          quantumTitle.textContent = 'Quantum Effects Detected:';
+          quantumEffectsDiv.appendChild(quantumTitle);
+          
+          quantumEffects.forEach(effect => {
+            const effectItem = document.createElement('div');
+            effectItem.className = 'quantum-effect-item';
+            effectItem.textContent = effect.description;
+            quantumEffectsDiv.appendChild(effectItem);
+          });
+          
+          responseItem.appendChild(quantumEffectsDiv);
+        }
+        
+        // Add to response area
+        responseArea.insertBefore(responseItem, responseArea.firstChild);
+        
+        // Scroll to the top
+        responseArea.scrollTop = 0;
+        
+        return { response, confidence };
+      } catch (error) {
+        console.error('Error processing query:', error);
+        responseArea.classList.remove('loading');
+        
+        // Create error response
+        const responseItem = document.createElement('div');
+        responseItem.className = 'response-item';
+        
+        const responseQuery = document.createElement('div');
+        responseQuery.className = 'response-query';
+        responseQuery.textContent = `You: ${query}`;
+        responseItem.appendChild(responseQuery);
+        
+        const responseResult = document.createElement('div');
+        responseResult.className = 'response-result';
+        responseResult.textContent = `Error: Failed to process query. ${error.message}`;
+        responseItem.appendChild(responseResult);
+        
+        responseArea.insertBefore(responseItem, responseArea.firstChild);
+      }
+    }
+    
+    // Create visual data flow effects
+    function createDataFlowEffects() {
+      const count = 10 + Math.floor(Math.random() * 10);
+      
+      for (let i = 0; i < count; i++) {
+        setTimeout(() => {
+          const dataStream = document.createElement('div');
+          dataStream.className = 'data-stream';
+          
+          // Random position
+          const startX = Math.random() * window.innerWidth * 0.8;
+          const startY = Math.random() * window.innerHeight * 0.8;
+          
+          // Random angle
+          const angle = Math.random() * Math.PI * 2;
+          
+          dataStream.style.left = `${startX}px`;
+          dataStream.style.top = `${startY}px`;
+          dataStream.style.transform = `rotate(${angle}rad)`;
+          
+          // Random color
+          const hue = Math.random() * 60 + 180; // Cyan to purple range
+          dataStream.style.background = `linear-gradient(90deg, transparent, hsl(${hue}, 100%, 50%), transparent)`;
+          
+          document.body.appendChild(dataStream);
+          
+          // Remove after animation completes
+          setTimeout(() => {
+            document.body.removeChild(dataStream);
+          }, 2000);
+        }, i * 100);
+      }
+    }
+    
+    // Activate random neural connections
+    function activateRandomConnections(count) {
+      const randomConnections = [];
+      for (let i = 0; i < Math.min(count, connections.length); i++) {
+        let connection;
+        do {
+          connection = connections[Math.floor(Math.random() * connections.length)];
+        } while (randomConnections.includes(connection));
+        
+        randomConnections.push(connection);
+        connection.userData.active = true;
+      }
+      
+      setTimeout(() => {
+        randomConnections.forEach(conn => {
+          if (conn.userData) {
+            conn.userData.active = false;
+          }
+        });
+      }, 2000);
+    }
+    
+    // Event listeners
+    commandButton.addEventListener('click', () => {
+      const query = commandInput.value.trim();
+      if (query) {
+        processQuery(query);
+        commandInput.value = '';
+      }
+    });
+    
+    commandInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const query = commandInput.value.trim();
+        if (query) {
+          processQuery(query);
+          commandInput.value = '';
+        }
+      }
+    });
+    
+    // Simulated API calls
+    function fetchSystemStatus() {
+      // Update dashboard
+      activeAgentsCount.textContent = '3';
+      memoryCount.textContent = '42';
+      qubitCount.textContent = '5';
+      
+      // Simulate system status
+      statusIndicator.style.backgroundColor = 'var(--success-color)';
+    }
+    
+    // Initialize the application
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize 3D visualization
+      initVisualization();
+      
+      // Fetch initial system status
+      fetchSystemStatus();
+      
+      // Intro animation
+      gsap.from('.header', { duration: 1, y: -50, opacity: 0, ease: 'power3.out' });
+      gsap.from('.left-panel', { duration: 1, x: -50, opacity: 0, delay: 0.2, ease: 'power3.out' });
+      gsap.from('.right-panel', { duration: 1, x: 50, opacity: 0, delay: 0.2, ease: 'power3.out' });
+      gsap.from('.command-area', { duration: 1, y: 50, opacity: 0, delay: 0.4, ease: 'power3.out' });
+      gsap.from('.visualization-overlay', { duration: 1, opacity: 0, delay: 0.6, ease: 'power3.out' });
+    });
+  </script>
+</body>
+</html>

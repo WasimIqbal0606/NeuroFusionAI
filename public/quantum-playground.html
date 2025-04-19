@@ -1,0 +1,2494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeuroFusionOS - Immersive Quantum Visualization Playground</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/postprocessing/ShaderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.11.0/dist/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #00f0ff;
+      --secondary-color: #7700ff;
+      --accent-color: #ff00aa;
+      --background-dark: #050510;
+      --background-medium: #080830;
+      --background-light: #10105a;
+      --text-primary: #ffffff;
+      --text-secondary: #aaaaff;
+      --success-color: #00ffa3;
+      --warning-color: #ffcc00;
+      --error-color: #ff2266;
+      --glow-primary: 0 0 10px rgba(0, 240, 255, 0.7);
+      --glow-secondary: 0 0 15px rgba(119, 0, 255, 0.7);
+      --glow-accent: 0 0 15px rgba(255, 0, 170, 0.7);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--background-dark);
+      color: var(--text-primary);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      position: relative;
+    }
+    
+    /* Background animated gradient */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 50% 50%, rgba(1, 10, 30, 0.8), rgba(1, 1, 10, 0.95));
+      z-index: -1;
+    }
+    
+    /* Star field effect */
+    body::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        radial-gradient(1px 1px at 10% 10%, white, transparent),
+        radial-gradient(1px 1px at 20% 20%, white, transparent),
+        radial-gradient(1px 1px at 30% 30%, white, transparent),
+        radial-gradient(1px 1px at 40% 40%, white, transparent),
+        radial-gradient(1px 1px at 50% 50%, white, transparent),
+        radial-gradient(1px 1px at 60% 60%, white, transparent),
+        radial-gradient(1px 1px at 70% 70%, white, transparent),
+        radial-gradient(1px 1px at 80% 80%, white, transparent),
+        radial-gradient(1px 1px at 90% 90%, white, transparent);
+      background-size: 200% 200%;
+      opacity: 0.15;
+      z-index: -1;
+      animation: stars 120s ease infinite;
+    }
+    
+    @keyframes stars {
+      0%, 100% { background-position: 0% 0%; }
+      25% { background-position: 100% 0%; }
+      50% { background-position: 100% 100%; }
+      75% { background-position: 0% 100%; }
+    }
+    
+    #visualization-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+    
+    /* UI Overlay */
+    .ui-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      grid-template-columns: 300px 1fr 300px;
+      grid-template-areas:
+        "header header header"
+        "left-panel main right-panel"
+        "footer footer footer";
+      padding: 20px;
+    }
+    
+    .ui-overlay > * {
+      pointer-events: auto;
+    }
+    
+    /* Header */
+    .header {
+      grid-area: header;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(8, 8, 48, 0.7);
+      backdrop-filter: blur(15px);
+      border-radius: 20px;
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      box-shadow: var(--glow-primary), inset 0 0 20px rgba(0, 240, 255, 0.1);
+      padding: 15px 30px;
+    }
+    
+    .logo {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 1.4rem;
+      background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .logo-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      box-shadow: var(--glow-primary);
+    }
+    
+    .nav-controls {
+      display: flex;
+      gap: 15px;
+    }
+    
+    .nav-item {
+      padding: 8px 15px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .nav-item:hover, .nav-item.active {
+      background: rgba(0, 240, 255, 0.1);
+      box-shadow: var(--glow-primary);
+      transform: translateY(-2px);
+    }
+    
+    /* Left Panel */
+    .left-panel {
+      grid-area: left-panel;
+      background: rgba(8, 8, 48, 0.7);
+      backdrop-filter: blur(15px);
+      border-radius: 20px;
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      box-shadow: var(--glow-primary), inset 0 0 20px rgba(0, 240, 255, 0.1);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+      max-height: calc(100vh - 180px);
+    }
+    
+    .control-section {
+      margin-bottom: 15px;
+    }
+    
+    .section-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .section-title svg {
+      width: 16px;
+      height: 16px;
+    }
+    
+    .control-group {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      padding: 15px;
+      border: 1px solid rgba(0, 240, 255, 0.1);
+    }
+    
+    .control-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .control-row:last-child {
+      margin-bottom: 0;
+    }
+    
+    .control-label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      width: 100px;
+      flex-shrink: 0;
+    }
+    
+    .control-input {
+      flex: 1;
+    }
+    
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .slider {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+    }
+    
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      cursor: pointer;
+      box-shadow: var(--glow-primary);
+    }
+    
+    .slider-value {
+      font-size: 0.8rem;
+      font-family: 'Orbitron', sans-serif;
+      width: 40px;
+      text-align: center;
+    }
+    
+    .button-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    .control-button {
+      flex: 1;
+      padding: 8px 0;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .control-button:hover, .control-button.active {
+      background: rgba(0, 240, 255, 0.1);
+      box-shadow: var(--glow-primary);
+      transform: translateY(-2px);
+    }
+    
+    .control-button.accent {
+      border-color: rgba(255, 0, 170, 0.3);
+    }
+    
+    .control-button.accent:hover {
+      background: rgba(255, 0, 170, 0.1);
+      box-shadow: var(--glow-accent);
+    }
+    
+    .toggle-button {
+      width: 50px;
+      height: 24px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .toggle-button::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--text-secondary);
+      transition: all 0.3s ease;
+    }
+    
+    .toggle-button.active {
+      background: rgba(0, 240, 255, 0.2);
+      border-color: rgba(0, 240, 255, 0.4);
+    }
+    
+    .toggle-button.active::after {
+      left: calc(100% - 20px);
+      background: var(--primary-color);
+      box-shadow: var(--glow-primary);
+    }
+    
+    /* Right Panel */
+    .right-panel {
+      grid-area: right-panel;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .metrics-card {
+      background: rgba(8, 8, 48, 0.7);
+      backdrop-filter: blur(15px);
+      border-radius: 20px;
+      border: 1px solid rgba(119, 0, 255, 0.2);
+      box-shadow: var(--glow-secondary), inset 0 0 20px rgba(119, 0, 255, 0.1);
+      padding: 20px;
+    }
+    
+    .metrics-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+      color: var(--secondary-color);
+      margin-bottom: 15px;
+      letter-spacing: 1px;
+    }
+    
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+    
+    .metric-item {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      padding: 12px;
+      border: 1px solid rgba(119, 0, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+    
+    .metric-item:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--glow-secondary);
+    }
+    
+    .metric-value {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 5px;
+    }
+    
+    .metric-label {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .visualization-panel {
+      background: rgba(8, 8, 48, 0.7);
+      backdrop-filter: blur(15px);
+      border-radius: 20px;
+      border: 1px solid rgba(119, 0, 255, 0.2);
+      box-shadow: var(--glow-secondary), inset 0 0 20px rgba(119, 0, 255, 0.1);
+      padding: 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .visualization-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+      color: var(--secondary-color);
+      margin-bottom: 15px;
+      letter-spacing: 1px;
+    }
+    
+    .wave-container {
+      flex: 1;
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(119, 0, 255, 0.2);
+    }
+    
+    /* Footer */
+    .footer {
+      grid-area: footer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(8, 8, 48, 0.7);
+      backdrop-filter: blur(15px);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 0, 170, 0.2);
+      box-shadow: var(--glow-accent), inset 0 0 20px rgba(255, 0, 170, 0.1);
+      padding: 15px 30px;
+      margin-top: 20px;
+    }
+    
+    .footer-logo {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.9rem;
+      color: var(--accent-color);
+    }
+    
+    .playback-controls {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .playback-button {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 0, 170, 0.3);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .playback-button:hover {
+      background: rgba(255, 0, 170, 0.1);
+      box-shadow: var(--glow-accent);
+      transform: scale(1.1);
+    }
+    
+    .playback-icon {
+      color: var(--accent-color);
+      font-size: 1.2rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .playback-progress {
+      flex: 1;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .progress-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-color), var(--primary-color));
+      border-radius: 3px;
+      width: 30%;
+    }
+    
+    .footer-info {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    
+    /* Special Effects */
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    
+    .rotate {
+      animation: rotate 10s linear infinite;
+    }
+    
+    @keyframes rotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Tooltip */
+    [data-tooltip] {
+      position: relative;
+    }
+    
+    [data-tooltip]::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(8, 8, 48, 0.9);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      z-index: 100;
+      pointer-events: none;
+      border: 1px solid var(--primary-color);
+      box-shadow: var(--glow-primary);
+    }
+    
+    [data-tooltip]:hover::after {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    /* Modal */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .modal.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .modal-content {
+      width: 500px;
+      background: rgba(8, 8, 48, 0.9);
+      border-radius: 20px;
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      box-shadow: var(--glow-primary), inset 0 0 30px rgba(0, 240, 255, 0.2);
+      padding: 30px;
+      position: relative;
+      transform: translateY(50px);
+      opacity: 0;
+      transition: all 0.5s ease;
+    }
+    
+    .modal.active .modal-content {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    
+    .modal-close {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 0, 170, 0.3);
+      color: var(--accent-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: all 0.3s ease;
+    }
+    
+    .modal-close:hover {
+      background: rgba(255, 0, 170, 0.1);
+      box-shadow: var(--glow-accent);
+      transform: rotate(90deg);
+    }
+    
+    .modal-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.5rem;
+      color: var(--primary-color);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .modal-body {
+      margin-bottom: 30px;
+    }
+    
+    .modal-footer {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+    
+    .modal-button {
+      padding: 10px 25px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      color: var(--text-primary);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .modal-button:hover {
+      background: rgba(0, 240, 255, 0.1);
+      box-shadow: var(--glow-primary);
+      transform: translateY(-3px);
+    }
+    
+    .modal-button.accent {
+      border-color: rgba(255, 0, 170, 0.3);
+    }
+    
+    .modal-button.accent:hover {
+      background: rgba(255, 0, 170, 0.1);
+      box-shadow: var(--glow-accent);
+    }
+    
+    /* Presets Section */
+    .presets-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    
+    .preset-button {
+      padding: 8px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      color: var(--text-primary);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+    
+    .preset-button:hover {
+      background: rgba(0, 240, 255, 0.1);
+      box-shadow: var(--glow-primary);
+      transform: translateY(-2px);
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+      .ui-overlay {
+        grid-template-columns: 250px 1fr 250px;
+      }
+    }
+    
+    @media (max-width: 992px) {
+      .ui-overlay {
+        grid-template-columns: 200px 1fr;
+        grid-template-areas:
+          "header header"
+          "left-panel main"
+          "footer footer";
+      }
+      
+      .right-panel {
+        display: none;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .ui-overlay {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "header"
+          "main"
+          "left-panel"
+          "footer";
+      }
+      
+      .header {
+        padding: 10px 15px;
+      }
+      
+      .logo {
+        font-size: 1.2rem;
+      }
+      
+      .nav-controls {
+        display: none;
+      }
+      
+      .left-panel {
+        margin-top: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 3D Visualization Container -->
+  <div id="visualization-container"></div>
+  
+  <!-- UI Overlay -->
+  <div class="ui-overlay">
+    <header class="header">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z" fill="white"/>
+            <path d="M12 6C8.69 6 6 8.69 6 12C6 15.31 8.69 18 12 18C15.31 18 18 15.31 18 12C18 8.69 15.31 6 12 6ZM12 16C9.79 16 8 14.21 8 12C8 9.79 9.79 8 12 8C14.21 8 16 9.79 16 12C16 14.21 14.21 16 12 16Z" fill="white"/>
+          </svg>
+        </div>
+        <div>Quantum Visualization Playground</div>
+      </div>
+      
+      <div class="nav-controls">
+        <div class="nav-item active" data-tooltip="Quantum Playground">PLAYGROUND</div>
+        <div class="nav-item" data-tooltip="Quantum Algorithm Designer">DESIGNER</div>
+        <div class="nav-item" data-tooltip="Quantum Circuits">CIRCUITS</div>
+        <div class="nav-item" data-tooltip="Return to Dashboard">DASHBOARD</div>
+      </div>
+    </header>
+    
+    <div class="left-panel">
+      <div class="control-section">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M15.9 18.5l-6-5.5 6-5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          VISUALIZATION MODE
+        </div>
+        <div class="control-group">
+          <div class="button-row">
+            <div class="control-button active" id="mode-bloch">BLOCH SPHERE</div>
+            <div class="control-button" id="mode-circuit">CIRCUIT</div>
+          </div>
+          <div class="button-row">
+            <div class="control-button" id="mode-wave">WAVE FUNCTION</div>
+            <div class="control-button" id="mode-entanglement">ENTANGLEMENT</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="control-section">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9 17H7V10H9V17ZM13 17H11V7H13V17ZM17 17H15V13H17V17ZM19 19H5V5H19V19.1M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3Z" fill="currentColor"/>
+          </svg>
+          QUANTUM PARAMETERS
+        </div>
+        <div class="control-group">
+          <div class="control-row">
+            <div class="control-label">Qubits</div>
+            <div class="control-input slider-container">
+              <input type="range" class="slider" id="qubit-count" min="1" max="8" value="3">
+              <div class="slider-value" id="qubit-value">3</div>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">Complexity</div>
+            <div class="control-input slider-container">
+              <input type="range" class="slider" id="complexity" min="1" max="10" value="5">
+              <div class="slider-value" id="complexity-value">5</div>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">Entanglement</div>
+            <div class="control-input slider-container">
+              <input type="range" class="slider" id="entanglement" min="0" max="100" value="50">
+              <div class="slider-value" id="entanglement-value">50</div>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">Coherence</div>
+            <div class="control-input slider-container">
+              <input type="range" class="slider" id="coherence" min="0" max="100" value="80">
+              <div class="slider-value" id="coherence-value">80</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="control-section">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 3V21M16.6 3H7.4C6.08 3 5 4.08 5 5.4V18.6C5 19.92 6.08 21 7.4 21H16.6C17.92 21 19 19.92 19 18.6V5.4C19 4.08 17.92 3 16.6 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          QUANTUM GATES
+        </div>
+        <div class="control-group">
+          <div class="button-row">
+            <div class="control-button" id="gate-h">H</div>
+            <div class="control-button" id="gate-x">X</div>
+            <div class="control-button" id="gate-y">Y</div>
+            <div class="control-button" id="gate-z">Z</div>
+          </div>
+          <div class="button-row">
+            <div class="control-button" id="gate-cnot">CNOT</div>
+            <div class="control-button" id="gate-swap">SWAP</div>
+            <div class="control-button" id="gate-t">T</div>
+            <div class="control-button" id="gate-s">S</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="control-section">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          ANIMATION SETTINGS
+        </div>
+        <div class="control-group">
+          <div class="control-row">
+            <div class="control-label">Speed</div>
+            <div class="control-input slider-container">
+              <input type="range" class="slider" id="animation-speed" min="1" max="10" value="5">
+              <div class="slider-value" id="speed-value">5</div>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">Particles</div>
+            <div class="control-input slider-container">
+              <input type="range" class="slider" id="particle-count" min="100" max="2000" step="100" value="800">
+              <div class="slider-value" id="particle-value">800</div>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">Glow Effect</div>
+            <div class="control-input">
+              <div class="toggle-button active" id="glow-toggle"></div>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">Sonification</div>
+            <div class="control-input">
+              <div class="toggle-button" id="sound-toggle"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="control-section">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 9L12 16L5 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          PRESETS
+        </div>
+        <div class="control-group">
+          <div class="presets-grid">
+            <div class="preset-button" data-preset="bell-state">BELL STATE</div>
+            <div class="preset-button" data-preset="grover">GROVER</div>
+            <div class="preset-button" data-preset="qft">QFT</div>
+            <div class="preset-button" data-preset="shor">SHOR</div>
+            <div class="preset-button" data-preset="vqe">VQE</div>
+            <div class="preset-button" data-preset="custom">CUSTOM...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="right-panel">
+      <div class="metrics-card">
+        <div class="metrics-title">QUANTUM METRICS</div>
+        <div class="metrics-grid">
+          <div class="metric-item">
+            <div class="metric-value" id="metric-1">0.92</div>
+            <div class="metric-label">FIDELITY</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-value" id="metric-2">0.76</div>
+            <div class="metric-label">COHERENCE</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-value" id="metric-3">0.33</div>
+            <div class="metric-label">ENTANGLEMENT</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-value" id="metric-4">5/8</div>
+            <div class="metric-label">QUBITS ACTIVE</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="visualization-panel">
+        <div class="visualization-title">QUANTUM WAVEFORM</div>
+        <div class="wave-container" id="wave-visualization">
+          <!-- Canvas for wave visualization will be added here -->
+        </div>
+      </div>
+    </div>
+    
+    <footer class="footer">
+      <div class="footer-logo">NeuroFusionOS</div>
+      
+      <div class="playback-controls">
+        <div class="playback-button" id="play-button" data-tooltip="Play/Pause">
+          <div class="playback-icon">▶</div>
+        </div>
+        <div class="playback-button" id="reset-button" data-tooltip="Reset">
+          <div class="playback-icon">⟳</div>
+        </div>
+        <div class="playback-progress">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+      </div>
+      
+      <div class="footer-info">Simulation Time: <span id="sim-time">00:42</span></div>
+    </footer>
+  </div>
+  
+  <!-- Modal -->
+  <div class="modal" id="preset-modal">
+    <div class="modal-content">
+      <div class="modal-close">×</div>
+      <div class="modal-title">Custom Quantum Circuit</div>
+      <div class="modal-body">
+        <div class="control-section">
+          <div class="section-title">CIRCUIT DEFINITION</div>
+          <div class="control-group">
+            <div class="control-row">
+              <div class="control-label">Name</div>
+              <div class="control-input">
+                <input type="text" id="circuit-name" placeholder="My Custom Circuit" style="width: 100%; padding: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(0,240,255,0.2); border-radius: 5px; color: white;">
+              </div>
+            </div>
+            <div class="control-row" style="margin-top: 15px;">
+              <div class="control-label">Description</div>
+              <div class="control-input">
+                <textarea id="circuit-description" placeholder="Description of your quantum circuit..." style="width: 100%; height: 80px; padding: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(0,240,255,0.2); border-radius: 5px; color: white; resize: none;"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="modal-button" id="cancel-button">CANCEL</div>
+        <div class="modal-button accent" id="save-button">SAVE</div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Global variables
+    let scene, camera, renderer, controls, composer;
+    let blochSpheres = [];
+    let particles = [];
+    let circuitElements = [];
+    let waves = [];
+    let entanglementLines = [];
+    
+    let isPlaying = true;
+    let currentVisualizationMode = 'bloch';
+    let synth = null;
+    let soundEnabled = false;
+    
+    // Initialize everything
+    document.addEventListener('DOMContentLoaded', () => {
+      initThree();
+      initControls();
+      initSonification();
+      updateVisualization();
+      animate();
+    });
+    
+    // Initialize Three.js scene
+    function initThree() {
+      // Scene
+      scene = new THREE.Scene();
+      
+      // Camera
+      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.z = 20;
+      
+      // Renderer
+      const container = document.getElementById('visualization-container');
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setClearColor(0x000010, 0);
+      container.appendChild(renderer.domElement);
+      
+      // Controls
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.rotateSpeed = 0.5;
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = 0.5;
+      
+      // Add subtle ambient light
+      const ambientLight = new THREE.AmbientLight(0x111122, 0.8);
+      scene.add(ambientLight);
+      
+      // Add directional lights with colors
+      const light1 = new THREE.DirectionalLight(0x00f0ff, 1);
+      light1.position.set(5, 5, 5);
+      scene.add(light1);
+      
+      const light2 = new THREE.DirectionalLight(0x7700ff, 1);
+      light2.position.set(-5, -5, 5);
+      scene.add(light2);
+      
+      const light3 = new THREE.DirectionalLight(0xff00aa, 0.5);
+      light3.position.set(0, 0, 10);
+      scene.add(light3);
+      
+      // Post-processing
+      composer = new THREE.EffectComposer(renderer);
+      const renderPass = new THREE.RenderPass(scene, camera);
+      composer.addPass(renderPass);
+      
+      const bloomPass = new THREE.UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        1.5, // strength
+        0.4, // radius
+        0.85 // threshold
+      );
+      composer.addPass(bloomPass);
+      
+      // Handle window resize
+      window.addEventListener('resize', onWindowResize);
+      
+      // Initialize wave visualization canvas in right panel
+      initWaveCanvas();
+    }
+    
+    // Initialize wave visualization canvas
+    function initWaveCanvas() {
+      const container = document.getElementById('wave-visualization');
+      const canvas = document.createElement('canvas');
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
+      container.appendChild(canvas);
+      
+      // Draw initial waveform
+      drawWaveform(canvas);
+    }
+    
+    // Draw quantum waveform on canvas
+    function drawWaveform(canvas) {
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, width, height);
+      
+      // Get number of qubits
+      const qubits = parseInt(document.getElementById('qubit-count').value);
+      const states = Math.pow(2, qubits);
+      
+      // Generate probabilities (would be from quantum simulation in a real system)
+      const probabilities = [];
+      let totalProb = 0;
+      for (let i = 0; i < states; i++) {
+        // Create a distribution that depends on the entanglement and coherence settings
+        const entValue = parseInt(document.getElementById('entanglement').value) / 100;
+        const cohValue = parseInt(document.getElementById('coherence').value) / 100;
+        
+        // More entangled states have less uniform distributions
+        let prob;
+        if (entValue > 0.7) {
+          // Highly entangled states tend to cluster in certain states
+          const isBell = (i % 3 === 0);
+          prob = isBell ? Math.random() * 0.3 + 0.1 : Math.random() * 0.05;
+        } else if (entValue > 0.3) {
+          // Medium entanglement has some structure
+          prob = Math.random() * 0.2 + 0.05;
+        } else {
+          // Low entanglement is more uniform
+          prob = Math.random() * 0.1 + 0.05;
+        }
+        
+        // Coherence affects how "pure" the state is
+        if (cohValue > 0.8) {
+          // High coherence emphasizes a few states
+          if (Math.random() > 0.7) {
+            prob *= 2;
+          }
+        } else if (cohValue < 0.3) {
+          // Low coherence makes distribution more uniform
+          prob = (prob + 0.1) / 2;
+        }
+        
+        probabilities.push(prob);
+        totalProb += prob;
+      }
+      
+      // Normalize probabilities
+      for (let i = 0; i < probabilities.length; i++) {
+        probabilities[i] /= totalProb;
+      }
+      
+      // Draw bars
+      const barWidth = width / states;
+      const maxBarHeight = height * 0.9;
+      
+      for (let i = 0; i < states; i++) {
+        const barHeight = probabilities[i] * maxBarHeight;
+        
+        // Create gradient based on state
+        const gradient = ctx.createLinearGradient(0, height - barHeight, 0, height);
+        
+        // Color based on qubit pattern (different colors for different basis states)
+        const binary = i.toString(2).padStart(qubits, '0');
+        let r, g, b;
+        
+        // States with more 1s get more purple/pink, more 0s get more cyan
+        const oneCount = (binary.match(/1/g) || []).length;
+        const ratio = oneCount / qubits;
+        
+        r = Math.round(255 * Math.min(1, ratio * 2));
+        g = Math.round(30);
+        b = Math.round(255 * (1 - ratio));
+        
+        gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.8)`);
+        gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0.2)`);
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(i * barWidth, height - barHeight, barWidth - 1, barHeight);
+        
+        // Add state label for wider bars
+        if (barWidth > 30 && probabilities[i] > 0.05) {
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '10px Orbitron';
+          ctx.textAlign = 'center';
+          ctx.fillText(`|${binary}⟩`, i * barWidth + barWidth / 2, height - barHeight - 5);
+        }
+      }
+      
+      // Draw grid lines
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.lineWidth = 1;
+      
+      // Horizontal grid lines
+      for (let i = 0; i <= 10; i++) {
+        const y = height - (i * height / 10);
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+        
+        // Add probability label
+        if (i % 2 === 0) {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+          ctx.font = '10px Inter';
+          ctx.textAlign = 'left';
+          ctx.fillText(`${(i/10).toFixed(1)}`, 5, y - 5);
+        }
+      }
+    }
+    
+    // Initialize UI controls
+    function initControls() {
+      // Visualization mode buttons
+      document.getElementById('mode-bloch').addEventListener('click', () => switchMode('bloch'));
+      document.getElementById('mode-circuit').addEventListener('click', () => switchMode('circuit'));
+      document.getElementById('mode-wave').addEventListener('click', () => switchMode('wave'));
+      document.getElementById('mode-entanglement').addEventListener('click', () => switchMode('entanglement'));
+      
+      // Quantum gate buttons
+      document.querySelectorAll('[id^="gate-"]').forEach(button => {
+        button.addEventListener('click', () => {
+          // Highlight selected gate
+          document.querySelectorAll('[id^="gate-"]').forEach(b => b.classList.remove('active'));
+          button.classList.add('active');
+          
+          // Apply the gate in visualization
+          applyGate(button.id.split('-')[1]);
+        });
+      });
+      
+      // Preset buttons
+      document.querySelectorAll('.preset-button').forEach(button => {
+        button.addEventListener('click', () => {
+          const preset = button.getAttribute('data-preset');
+          if (preset === 'custom') {
+            // Show custom circuit modal
+            document.getElementById('preset-modal').classList.add('active');
+          } else {
+            applyPreset(preset);
+          }
+        });
+      });
+      
+      // Modal controls
+      document.querySelector('.modal-close').addEventListener('click', () => {
+        document.getElementById('preset-modal').classList.remove('active');
+      });
+      
+      document.getElementById('cancel-button').addEventListener('click', () => {
+        document.getElementById('preset-modal').classList.remove('active');
+      });
+      
+      document.getElementById('save-button').addEventListener('click', () => {
+        const name = document.getElementById('circuit-name').value || 'Custom Circuit';
+        const description = document.getElementById('circuit-description').value || 'User-defined quantum circuit';
+        
+        // Here you would save the circuit definition
+        console.log(`Saved custom circuit: ${name}`);
+        
+        // Close modal and apply a basic custom preset
+        document.getElementById('preset-modal').classList.remove('active');
+        applyPreset('custom', { name, description });
+      });
+      
+      // Sliders
+      const sliders = [
+        { id: 'qubit-count', valueId: 'qubit-value', callback: updateVisualization },
+        { id: 'complexity', valueId: 'complexity-value', callback: updateVisualization },
+        { id: 'entanglement', valueId: 'entanglement-value', callback: updateMetrics },
+        { id: 'coherence', valueId: 'coherence-value', callback: updateMetrics },
+        { id: 'animation-speed', valueId: 'speed-value' },
+        { id: 'particle-count', valueId: 'particle-value', callback: updateParticles }
+      ];
+      
+      sliders.forEach(slider => {
+        const sliderElement = document.getElementById(slider.id);
+        const valueElement = document.getElementById(slider.valueId);
+        
+        // Initial value
+        valueElement.textContent = sliderElement.value;
+        
+        // Update on change
+        sliderElement.addEventListener('input', () => {
+          valueElement.textContent = sliderElement.value;
+          if (slider.callback) slider.callback();
+        });
+      });
+      
+      // Toggle buttons
+      document.getElementById('glow-toggle').addEventListener('click', function() {
+        this.classList.toggle('active');
+        toggleGlow(this.classList.contains('active'));
+      });
+      
+      document.getElementById('sound-toggle').addEventListener('click', function() {
+        this.classList.toggle('active');
+        soundEnabled = this.classList.contains('active');
+        if (soundEnabled) {
+          startAudio();
+        } else {
+          stopAudio();
+        }
+      });
+      
+      // Playback controls
+      document.getElementById('play-button').addEventListener('click', togglePlayback);
+      document.getElementById('reset-button').addEventListener('click', resetSimulation);
+      
+      // Set initial metrics
+      updateMetrics();
+    }
+    
+    // Switch visualization mode
+    function switchMode(mode) {
+      // Highlight active mode button
+      document.querySelectorAll('[id^="mode-"]').forEach(button => button.classList.remove('active'));
+      document.getElementById(`mode-${mode}`).classList.add('active');
+      
+      currentVisualizationMode = mode;
+      updateVisualization();
+    }
+    
+    // Apply quantum gate
+    function applyGate(gate) {
+      console.log(`Applying ${gate} gate`);
+      
+      // Visual feedback
+      const gateButton = document.getElementById(`gate-${gate}`);
+      gateButton.style.transform = 'scale(1.2)';
+      setTimeout(() => {
+        gateButton.style.transform = '';
+      }, 200);
+      
+      // Apply gate effect in visualization
+      // This would be tied to actual quantum simulation in a real system
+      
+      // Update visualization
+      updateVisualization();
+      
+      // Update metrics
+      updateMetrics();
+      
+      // Sound effect if enabled
+      if (soundEnabled) {
+        playGateSound(gate);
+      }
+    }
+    
+    // Apply preset
+    function applyPreset(preset, customData) {
+      console.log(`Applying ${preset} preset`);
+      
+      // Set parameters based on preset
+      let qubits, complexity, entanglement, coherence;
+      
+      switch (preset) {
+        case 'bell-state':
+          qubits = 2;
+          complexity = 3;
+          entanglement = 90;
+          coherence = 95;
+          break;
+        case 'grover':
+          qubits = 4;
+          complexity = 7;
+          entanglement = 60;
+          coherence = 85;
+          break;
+        case 'qft':
+          qubits = 5;
+          complexity = 8;
+          entanglement = 70;
+          coherence = 80;
+          break;
+        case 'shor':
+          qubits = 8;
+          complexity = 10;
+          entanglement = 40;
+          coherence = 75;
+          break;
+        case 'vqe':
+          qubits = 6;
+          complexity = 6;
+          entanglement = 50;
+          coherence = 65;
+          break;
+        case 'custom':
+          qubits = 3;
+          complexity = 5;
+          entanglement = 40;
+          coherence = 70;
+          break;
+      }
+      
+      // Update sliders
+      document.getElementById('qubit-count').value = qubits;
+      document.getElementById('qubit-value').textContent = qubits;
+      
+      document.getElementById('complexity').value = complexity;
+      document.getElementById('complexity-value').textContent = complexity;
+      
+      document.getElementById('entanglement').value = entanglement;
+      document.getElementById('entanglement-value').textContent = entanglement;
+      
+      document.getElementById('coherence').value = coherence;
+      document.getElementById('coherence-value').textContent = coherence;
+      
+      // Update visualization
+      updateVisualization();
+      
+      // Update metrics
+      updateMetrics();
+    }
+    
+    // Update visualization based on current mode and parameters
+    function updateVisualization() {
+      // Clear previous visualization
+      clearVisualization();
+      
+      // Get parameters
+      const qubits = parseInt(document.getElementById('qubit-count').value);
+      const complexity = parseInt(document.getElementById('complexity').value);
+      
+      // Create visualization based on mode
+      switch (currentVisualizationMode) {
+        case 'bloch':
+          createBlochSpheres(qubits);
+          break;
+        case 'circuit':
+          createCircuit(qubits, complexity);
+          break;
+        case 'wave':
+          createWaveFunction(qubits);
+          break;
+        case 'entanglement':
+          createEntanglementVisualization(qubits);
+          break;
+      }
+      
+      // Also update the 2D wave visualization
+      const waveCanvas = document.querySelector('#wave-visualization canvas');
+      if (waveCanvas) {
+        drawWaveform(waveCanvas);
+      }
+    }
+    
+    // Clear all visualization elements
+    function clearVisualization() {
+      // Remove all bloch spheres
+      blochSpheres.forEach(sphere => {
+        scene.remove(sphere.group);
+      });
+      blochSpheres = [];
+      
+      // Remove all particles
+      particles.forEach(particle => {
+        scene.remove(particle);
+      });
+      particles = [];
+      
+      // Remove all circuit elements
+      circuitElements.forEach(element => {
+        scene.remove(element);
+      });
+      circuitElements = [];
+      
+      // Remove wave functions
+      waves.forEach(wave => {
+        scene.remove(wave);
+      });
+      waves = [];
+      
+      // Remove entanglement lines
+      entanglementLines.forEach(line => {
+        scene.remove(line);
+      });
+      entanglementLines = [];
+    }
+    
+    // Create Bloch sphere visualization
+    function createBlochSpheres(numQubits) {
+      const spacing = 5;
+      const startX = -((numQubits - 1) * spacing) / 2;
+      
+      for (let i = 0; i < numQubits; i++) {
+        const x = startX + i * spacing;
+        
+        // Create a group for the Bloch sphere
+        const group = new THREE.Group();
+        
+        // Main sphere
+        const sphereGeometry = new THREE.SphereGeometry(2, 32, 32);
+        const sphereMaterial = new THREE.MeshPhongMaterial({
+          color: 0x000020,
+          transparent: true,
+          opacity: 0.3,
+          side: THREE.DoubleSide,
+          specular: 0x6060ff,
+          shininess: 100
+        });
+        const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        group.add(sphere);
+        
+        // Axes
+        const axisLength = 2.5;
+        const axisMaterial = new THREE.LineBasicMaterial({ color: 0x444444 });
+        
+        // X-axis
+        const xAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(-axisLength, 0, 0),
+          new THREE.Vector3(axisLength, 0, 0)
+        ]);
+        const xAxis = new THREE.Line(xAxisGeometry, axisMaterial);
+        group.add(xAxis);
+        
+        // Y-axis
+        const yAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(0, -axisLength, 0),
+          new THREE.Vector3(0, axisLength, 0)
+        ]);
+        const yAxis = new THREE.Line(yAxisGeometry, axisMaterial);
+        group.add(yAxis);
+        
+        // Z-axis
+        const zAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(0, 0, -axisLength),
+          new THREE.Vector3(0, 0, axisLength)
+        ]);
+        const zAxis = new THREE.Line(zAxisGeometry, axisMaterial);
+        group.add(zAxis);
+        
+        // Labels for axes
+        const labelScale = 0.2;
+        const labelGeometry = new THREE.SphereGeometry(labelScale, 16, 16);
+        
+        // X label (red)
+        const xLabelMaterial = new THREE.MeshBasicMaterial({ color: 0xff3030 });
+        const xLabel = new THREE.Mesh(labelGeometry, xLabelMaterial);
+        xLabel.position.set(axisLength, 0, 0);
+        group.add(xLabel);
+        
+        // Y label (green)
+        const yLabelMaterial = new THREE.MeshBasicMaterial({ color: 0x30ff30 });
+        const yLabel = new THREE.Mesh(labelGeometry, yLabelMaterial);
+        yLabel.position.set(0, axisLength, 0);
+        group.add(yLabel);
+        
+        // Z label (blue)
+        const zLabelMaterial = new THREE.MeshBasicMaterial({ color: 0x3030ff });
+        const zLabel = new THREE.Mesh(labelGeometry, zLabelMaterial);
+        zLabel.position.set(0, 0, axisLength);
+        group.add(zLabel);
+        
+        // State vector (qubit state)
+        const stateMaterial = new THREE.LineBasicMaterial({ color: 0x00f0ff });
+        
+        // Random state for demonstration
+        const theta = Math.random() * Math.PI;
+        const phi = Math.random() * Math.PI * 2;
+        
+        const stateX = Math.sin(theta) * Math.cos(phi) * 2;
+        const stateY = Math.sin(theta) * Math.sin(phi) * 2;
+        const stateZ = Math.cos(theta) * 2;
+        
+        const stateGeometry = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(0, 0, 0),
+          new THREE.Vector3(stateX, stateY, stateZ)
+        ]);
+        const stateVector = new THREE.Line(stateGeometry, stateMaterial);
+        group.add(stateVector);
+        
+        // Arrow head for state vector
+        const arrowGeometry = new THREE.ConeGeometry(0.2, 0.5, 8);
+        const arrowMaterial = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
+        const arrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
+        
+        // Position and orient arrow
+        arrow.position.set(stateX, stateY, stateZ);
+        arrow.lookAt(0, 0, 0);
+        arrow.rotateX(Math.PI / 2);
+        group.add(arrow);
+        
+        // State indicator (glowing sphere at the tip of the state vector)
+        const stateSphereGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+        const stateSphereMaterial = new THREE.MeshBasicMaterial({
+          color: 0x00f0ff,
+          transparent: true,
+          opacity: 0.8
+        });
+        const stateSphere = new THREE.Mesh(stateSphereGeometry, stateSphereMaterial);
+        stateSphere.position.set(stateX, stateY, stateZ);
+        group.add(stateSphere);
+        
+        // Position the group
+        group.position.set(x, 0, 0);
+        
+        // Generate a random initial rotation for variety
+        group.rotation.x = Math.random() * Math.PI;
+        group.rotation.y = Math.random() * Math.PI;
+        group.rotation.z = Math.random() * Math.PI;
+        
+        // Add to scene
+        scene.add(group);
+        
+        // Store reference with metadata
+        blochSpheres.push({
+          group,
+          stateVector,
+          arrow,
+          stateSphere,
+          state: { theta, phi },
+          index: i,
+          rotationSpeed: 0.001 + Math.random() * 0.002
+        });
+        
+        // Add some particles around the Bloch sphere
+        addParticlesAroundBlochSphere(x, 0, 0, i);
+      }
+    }
+    
+    // Add particles around a Bloch sphere for visual effect
+    function addParticlesAroundBlochSphere(x, y, z, index) {
+      const particleCount = 50;
+      const radius = 3;
+      
+      // Create particle material with color based on qubit index
+      const hue = index / 10; // Spread colors
+      const color = new THREE.Color().setHSL(hue, 1, 0.5);
+      
+      const particlesMaterial = new THREE.PointsMaterial({
+        color: color,
+        size: 0.05,
+        transparent: true,
+        opacity: 0.6,
+        blending: THREE.AdditiveBlending
+      });
+      
+      // Create particles in a spherical distribution
+      const particlesGeometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(particleCount * 3);
+      
+      for (let i = 0; i < particleCount; i++) {
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        
+        const px = x + radius * Math.sin(phi) * Math.cos(theta);
+        const py = y + radius * Math.sin(phi) * Math.sin(theta);
+        const pz = z + radius * Math.cos(phi);
+        
+        positions[i * 3] = px;
+        positions[i * 3 + 1] = py;
+        positions[i * 3 + 2] = pz;
+      }
+      
+      particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      
+      // Create particle system
+      const particleSystem = new THREE.Points(particlesGeometry, particlesMaterial);
+      
+      // Add animation data
+      particleSystem.userData = {
+        originalPositions: positions.slice(),
+        time: 0,
+        speed: 0.002 + Math.random() * 0.002,
+        radius: radius,
+        center: { x, y, z },
+        hue: hue
+      };
+      
+      scene.add(particleSystem);
+      particles.push(particleSystem);
+    }
+    
+    // Create quantum circuit visualization
+    function createCircuit(numQubits, complexity) {
+      const qubitSpacing = 2;
+      const gateSpacing = 3;
+      const startY = ((numQubits - 1) * qubitSpacing) / 2;
+      const startX = -((complexity - 1) * gateSpacing) / 2;
+      
+      // Create qubit lines
+      for (let i = 0; i < numQubits; i++) {
+        const y = startY - i * qubitSpacing;
+        
+        // Create qubit line
+        const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(startX - 3, y, 0),
+          new THREE.Vector3(-startX + 3, y, 0)
+        ]);
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0x7700ff });
+        const line = new THREE.Line(lineGeometry, lineMaterial);
+        scene.add(line);
+        circuitElements.push(line);
+        
+        // Create qubit label
+        const labelGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+        const labelMaterial = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
+        const label = new THREE.Mesh(labelGeometry, labelMaterial);
+        label.position.set(startX - 4, y, 0);
+        scene.add(label);
+        circuitElements.push(label);
+      }
+      
+      // Create gates
+      const gates = ['H', 'X', 'Y', 'Z', 'CNOT', 'SWAP', 'T', 'S'];
+      const gateColors = {
+        'H': 0x00f0ff,
+        'X': 0xff00aa,
+        'Y': 0xffcc00,
+        'Z': 0x00ffa3,
+        'CNOT': 0x7700ff,
+        'SWAP': 0xffcc00,
+        'T': 0x00f0ff,
+        'S': 0xff00aa
+      };
+      
+      // Create gates based on complexity
+      const numGates = complexity * 2;
+      
+      for (let i = 0; i < numGates; i++) {
+        // Select a random gate type and qubit
+        const gateType = gates[Math.floor(Math.random() * gates.length)];
+        let qubit = Math.floor(Math.random() * numQubits);
+        
+        // Determine position
+        const gateIndex = Math.floor(i / 2);
+        const x = startX + gateIndex * gateSpacing;
+        const y = startY - qubit * qubitSpacing;
+        
+        // Special handling for multi-qubit gates
+        if (gateType === 'CNOT' || gateType === 'SWAP') {
+          // Ensure we have at least 2 qubits
+          if (numQubits < 2) continue;
+          
+          // Select a different target qubit
+          let targetQubit;
+          do {
+            targetQubit = Math.floor(Math.random() * numQubits);
+          } while (targetQubit === qubit);
+          
+          const targetY = startY - targetQubit * qubitSpacing;
+          
+          // Create connection line
+          const connGeometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(x, y, 0),
+            new THREE.Vector3(x, targetY, 0)
+          ]);
+          const connMaterial = new THREE.LineBasicMaterial({ color: gateColors[gateType] });
+          const conn = new THREE.Line(connGeometry, connMaterial);
+          scene.add(conn);
+          circuitElements.push(conn);
+          
+          // For CNOT, add target indicator on target qubit
+          if (gateType === 'CNOT') {
+            const targetGeometry = new THREE.RingGeometry(0.3, 0.4, 32);
+            const targetMaterial = new THREE.MeshBasicMaterial({ 
+              color: gateColors[gateType],
+              side: THREE.DoubleSide
+            });
+            const target = new THREE.Mesh(targetGeometry, targetMaterial);
+            target.position.set(x, targetY, 0);
+            target.rotation.x = Math.PI / 2;
+            scene.add(target);
+            circuitElements.push(target);
+          }
+          
+          // For SWAP, add target indicator on target qubit
+          if (gateType === 'SWAP') {
+            const targetGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.1);
+            const targetMaterial = new THREE.MeshBasicMaterial({ color: gateColors[gateType] });
+            const target = new THREE.Mesh(targetGeometry, targetMaterial);
+            target.position.set(x, targetY, 0);
+            scene.add(target);
+            circuitElements.push(target);
+          }
+        }
+        
+        // Create gate representation
+        let gateGeometry;
+        
+        if (gateType === 'H' || gateType === 'X' || gateType === 'Y' || gateType === 'Z') {
+          gateGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.2);
+        } else if (gateType === 'CNOT') {
+          gateGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+        } else if (gateType === 'T' || gateType === 'S') {
+          gateGeometry = new THREE.BoxGeometry(0.6, 0.6, 0.2);
+        } else {
+          gateGeometry = new THREE.BoxGeometry(0.7, 0.7, 0.2);
+        }
+        
+        const gateMaterial = new THREE.MeshPhongMaterial({ 
+          color: gateColors[gateType],
+          emissive: gateColors[gateType],
+          emissiveIntensity: 0.2,
+          transparent: true,
+          opacity: 0.8
+        });
+        
+        const gate = new THREE.Mesh(gateGeometry, gateMaterial);
+        gate.position.set(x, y, 0);
+        scene.add(gate);
+        circuitElements.push(gate);
+        
+        // Add text label for gate type
+        // Note: In a real implementation you'd use a text geometry or sprite
+        // For this demo, we'll just represent it with a different shape
+      }
+    }
+    
+    // Create wave function visualization
+    function createWaveFunction(numQubits) {
+      const states = Math.pow(2, numQubits);
+      const width = states * 0.5;
+      const startX = -width / 2;
+      
+      // Create base plane
+      const planeGeometry = new THREE.PlaneGeometry(width + 2, 10);
+      const planeMaterial = new THREE.MeshBasicMaterial({
+        color: 0x000020,
+        transparent: true,
+        opacity: 0.2,
+        side: THREE.DoubleSide
+      });
+      
+      const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+      plane.rotation.x = Math.PI / 2;
+      plane.position.y = -2;
+      scene.add(plane);
+      waves.push(plane);
+      
+      // Create wave function based on state probabilities
+      const coherence = parseInt(document.getElementById('coherence').value) / 100;
+      const entanglement = parseInt(document.getElementById('entanglement').value) / 100;
+      
+      // Create wave geometry
+      const wavePoints = [];
+      const waveHeight = 5;
+      const segments = 100;
+      
+      for (let i = 0; i <= segments; i++) {
+        const x = startX + (width * i / segments);
+        
+        // Calculate wave height based on probability distributions
+        // This would be from actual quantum state in a real system
+        let y = 0;
+        
+        // Add contributions from different frequency components
+        const baseFreq = 0.5 + entanglement * 2;
+        const phase = entanglement * Math.PI;
+        
+        // More coherent states have fewer frequency components
+        if (coherence > 0.8) {
+          // Just a few clean frequencies
+          y += Math.sin(x * baseFreq + phase) * 0.8;
+          y += Math.sin(x * baseFreq * 2 + phase * 1.5) * 0.2;
+        } else if (coherence > 0.5) {
+          // Medium complexity
+          y += Math.sin(x * baseFreq + phase) * 0.5;
+          y += Math.sin(x * baseFreq * 2 + phase * 1.5) * 0.3;
+          y += Math.sin(x * baseFreq * 3 + phase * 0.5) * 0.2;
+        } else {
+          // Complex, noisy wave function
+          y += Math.sin(x * baseFreq + phase) * 0.3;
+          y += Math.sin(x * baseFreq * 2 + phase * 1.5) * 0.25;
+          y += Math.sin(x * baseFreq * 3 + phase * 0.5) * 0.2;
+          y += Math.sin(x * baseFreq * 5 + phase * 2.5) * 0.15;
+          y += (Math.random() - 0.5) * 0.3 * (1 - coherence);
+        }
+        
+        // Apply overall scaling
+        y *= waveHeight * (0.5 + entanglement * 0.5);
+        
+        // Add point to the wave
+        wavePoints.push(new THREE.Vector3(x, y, 0));
+      }
+      
+      // Create the wave curve
+      const wavePath = new THREE.CatmullRomCurve3(wavePoints);
+      const waveGeometry = new THREE.TubeGeometry(wavePath, 100, 0.05, 8, false);
+      
+      // Create gradient material based on entanglement/coherence
+      const color1 = new THREE.Color(0x00f0ff);
+      const color2 = new THREE.Color(0xff00aa);
+      
+      const waveMaterial = new THREE.MeshPhongMaterial({
+        color: color1.lerp(color2, entanglement),
+        emissive: color1.lerp(color2, entanglement),
+        emissiveIntensity: 0.3,
+        transparent: true,
+        opacity: 0.7
+      });
+      
+      const wave = new THREE.Mesh(waveGeometry, waveMaterial);
+      scene.add(wave);
+      waves.push(wave);
+      
+      // Add particles along the wave
+      const particleCount = 50;
+      const particleGeometry = new THREE.BufferGeometry();
+      const particlePositions = new Float32Array(particleCount * 3);
+      
+      for (let i = 0; i < particleCount; i++) {
+        const t = i / particleCount;
+        const point = wavePath.getPoint(t);
+        
+        particlePositions[i * 3] = point.x;
+        particlePositions[i * 3 + 1] = point.y;
+        particlePositions[i * 3 + 2] = point.z;
+      }
+      
+      particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+      
+      const particleMaterial = new THREE.PointsMaterial({
+        color: color1.lerp(color2, entanglement),
+        size: 0.15,
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending
+      });
+      
+      const particleSystem = new THREE.Points(particleGeometry, particleMaterial);
+      
+      // Add animation data
+      particleSystem.userData = {
+        wavePath: wavePath,
+        time: 0,
+        originalPositions: particlePositions.slice()
+      };
+      
+      scene.add(particleSystem);
+      particles.push(particleSystem);
+    }
+    
+    // Create entanglement visualization
+    function createEntanglementVisualization(numQubits) {
+      const radius = 8;
+      const entanglement = parseInt(document.getElementById('entanglement').value) / 100;
+      
+      // Create qubits arranged in a circle
+      for (let i = 0; i < numQubits; i++) {
+        const angle = (i / numQubits) * Math.PI * 2;
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
+        
+        // Create qubit sphere
+        const sphereGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+        
+        // Color based on qubit index
+        const hue = i / numQubits;
+        const color = new THREE.Color().setHSL(hue, 1, 0.5);
+        
+        const sphereMaterial = new THREE.MeshPhongMaterial({
+          color: color,
+          emissive: color,
+          emissiveIntensity: 0.3
+        });
+        
+        const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        sphere.position.set(x, 0, z);
+        scene.add(sphere);
+        circuitElements.push(sphere);
+        
+        // Add label
+        const labelGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+        const labelMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const label = new THREE.Mesh(labelGeometry, labelMaterial);
+        label.position.set(x * 1.2, 0, z * 1.2);
+        scene.add(label);
+        circuitElements.push(label);
+      }
+      
+      // Create entanglement connections based on entanglement parameter
+      const maxConnections = (numQubits * (numQubits - 1)) / 2;
+      const connections = Math.floor(maxConnections * entanglement);
+      
+      // Track connected pairs to avoid duplicates
+      const connectedPairs = new Set();
+      
+      for (let i = 0; i < connections; i++) {
+        // Select two random qubits to connect
+        let qubit1, qubit2;
+        let pairKey;
+        
+        // Ensure we select a new unique pair
+        do {
+          qubit1 = Math.floor(Math.random() * numQubits);
+          qubit2 = Math.floor(Math.random() * numQubits);
+          pairKey = qubit1 < qubit2 ? `${qubit1}-${qubit2}` : `${qubit2}-${qubit1}`;
+        } while (qubit1 === qubit2 || connectedPairs.has(pairKey));
+        
+        connectedPairs.add(pairKey);
+        
+        // Calculate positions
+        const angle1 = (qubit1 / numQubits) * Math.PI * 2;
+        const x1 = Math.cos(angle1) * radius;
+        const z1 = Math.sin(angle1) * radius;
+        
+        const angle2 = (qubit2 / numQubits) * Math.PI * 2;
+        const x2 = Math.cos(angle2) * radius;
+        const z2 = Math.sin(angle2) * radius;
+        
+        // Create curved connection path
+        const curvePoints = [];
+        const segments = 20;
+        
+        for (let j = 0; j <= segments; j++) {
+          const t = j / segments;
+          
+          // Interpolate positions
+          const x = x1 * (1 - t) + x2 * t;
+          const z = z1 * (1 - t) + z2 * t;
+          
+          // Add curve height based on distance
+          const midPoint = 0.5;
+          const distFromMid = Math.abs(t - midPoint);
+          const curveHeight = 2 * (1 - distFromMid * 2);
+          const y = curveHeight * 2;
+          
+          curvePoints.push(new THREE.Vector3(x, y, z));
+        }
+        
+        // Create curve
+        const curve = new THREE.CatmullRomCurve3(curvePoints);
+        const curveGeometry = new THREE.TubeGeometry(curve, 20, 0.05, 8, false);
+        
+        // Create material that blends colors of both qubits
+        const hue1 = qubit1 / numQubits;
+        const hue2 = qubit2 / numQubits;
+        const color1 = new THREE.Color().setHSL(hue1, 1, 0.5);
+        const color2 = new THREE.Color().setHSL(hue2, 1, 0.5);
+        
+        // Blend colors
+        const blendedColor = color1.clone().lerp(color2, 0.5);
+        
+        const curveMaterial = new THREE.MeshPhongMaterial({
+          color: blendedColor,
+          transparent: true,
+          opacity: 0.7
+        });
+        
+        const curveMesh = new THREE.Mesh(curveGeometry, curveMaterial);
+        scene.add(curveMesh);
+        entanglementLines.push(curveMesh);
+        
+        // Add curve data for animation
+        curveMesh.userData = {
+          curve: curve,
+          qubit1: qubit1,
+          qubit2: qubit2,
+          strength: Math.random() * 0.5 + 0.5,
+          pulsePhase: Math.random() * Math.PI * 2,
+          pulseSpeed: 0.05 + Math.random() * 0.05
+        };
+        
+        // Add particles along the entanglement connection
+        const particleCount = 10;
+        const particleGeometry = new THREE.BufferGeometry();
+        const particlePositions = new Float32Array(particleCount * 3);
+        
+        for (let j = 0; j < particleCount; j++) {
+          const t = j / particleCount;
+          const point = curve.getPoint(t);
+          
+          particlePositions[j * 3] = point.x;
+          particlePositions[j * 3 + 1] = point.y;
+          particlePositions[j * 3 + 2] = point.z;
+        }
+        
+        particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+        
+        const particleMaterial = new THREE.PointsMaterial({
+          color: blendedColor,
+          size: 0.15,
+          transparent: true,
+          opacity: 0.8,
+          blending: THREE.AdditiveBlending
+        });
+        
+        const particleSystem = new THREE.Points(particleGeometry, particleMaterial);
+        
+        // Add animation data
+        particleSystem.userData = {
+          curve: curve,
+          time: 0,
+          speed: 0.01 + Math.random() * 0.01,
+          direction: Math.random() > 0.5 ? 1 : -1
+        };
+        
+        scene.add(particleSystem);
+        particles.push(particleSystem);
+      }
+      
+      // Add central entanglement "core"
+      const coreGeometry = new THREE.OctahedronGeometry(1, 0);
+      const coreMaterial = new THREE.MeshPhongMaterial({
+        color: 0x7700ff,
+        emissive: 0x7700ff,
+        emissiveIntensity: 0.3,
+        transparent: true,
+        opacity: 0.8
+      });
+      
+      const core = new THREE.Mesh(coreGeometry, coreMaterial);
+      scene.add(core);
+      circuitElements.push(core);
+      
+      // Add core animation data
+      core.userData = {
+        rotationSpeed: 0.01,
+        pulsePhase: 0
+      };
+    }
+    
+    // Update metrics based on current parameters
+    function updateMetrics() {
+      // Get parameters
+      const entanglement = parseInt(document.getElementById('entanglement').value) / 100;
+      const coherence = parseInt(document.getElementById('coherence').value) / 100;
+      const qubits = parseInt(document.getElementById('qubit-count').value);
+      const complexity = parseInt(document.getElementById('complexity').value) / 10;
+      
+      // Calculate metrics (in a real system these would come from quantum simulation)
+      let fidelity = coherence * (1 - 0.2 * entanglement);
+      fidelity = Math.max(0.5, Math.min(0.99, fidelity)); // Ensure reasonable range
+      
+      const activeQubits = `${qubits}/${8}`;
+      
+      // Update displayed values
+      document.getElementById('metric-1').textContent = fidelity.toFixed(2);
+      document.getElementById('metric-2').textContent = coherence.toFixed(2);
+      document.getElementById('metric-3').textContent = entanglement.toFixed(2);
+      document.getElementById('metric-4').textContent = activeQubits;
+      
+      // Also update the waveform visualization
+      const waveCanvas = document.querySelector('#wave-visualization canvas');
+      if (waveCanvas) {
+        drawWaveform(waveCanvas);
+      }
+    }
+    
+    // Update the number of particles
+    function updateParticles() {
+      // Re-create visualization with new particle count
+      updateVisualization();
+    }
+    
+    // Toggle glow effect
+    function toggleGlow(enabled) {
+      if (enabled) {
+        // Enable bloom effect
+        composer.passes[1].strength = 1.5;
+      } else {
+        // Disable bloom effect
+        composer.passes[1].strength = 0;
+      }
+    }
+    
+    // Initialize sonification
+    function initSonification() {
+      // Create Tone.js synth
+      synth = new Tone.PolySynth(Tone.Synth).toDestination();
+      synth.volume.value = -15; // Lower volume
+    }
+    
+    // Play gate sound
+    function playGateSound(gate) {
+      if (!synth) return;
+      
+      // Different sound for each gate type
+      let note, duration;
+      
+      switch (gate) {
+        case 'h':
+          note = 'C4';
+          duration = '8n';
+          break;
+        case 'x':
+          note = 'E4';
+          duration = '8n';
+          break;
+        case 'y':
+          note = 'G4';
+          duration = '8n';
+          break;
+        case 'z':
+          note = 'B4';
+          duration = '8n';
+          break;
+        case 'cnot':
+          note = ['C4', 'G4'];
+          duration = '8n';
+          break;
+        case 'swap':
+          note = ['E4', 'A4'];
+          duration = '8n';
+          break;
+        case 't':
+          note = 'D4';
+          duration = '16n';
+          break;
+        case 's':
+          note = 'A3';
+          duration = '16n';
+          break;
+        default:
+          note = 'C4';
+          duration = '8n';
+      }
+      
+      synth.triggerAttackRelease(note, duration);
+    }
+    
+    // Start audio
+    function startAudio() {
+      if (Tone.context.state !== 'running') {
+        Tone.context.resume();
+      }
+      
+      // Play an initialization chord
+      synth.triggerAttackRelease(['C4', 'E4', 'G4'], '4n');
+    }
+    
+    // Stop audio
+    function stopAudio() {
+      synth.releaseAll();
+    }
+    
+    // Toggle playback
+    function togglePlayback() {
+      isPlaying = !isPlaying;
+      
+      // Update button icon
+      document.querySelector('#play-button .playback-icon').innerHTML = isPlaying ? '❚❚' : '▶';
+      
+      // Update controls rotation
+      controls.autoRotate = isPlaying;
+    }
+    
+    // Reset simulation
+    function resetSimulation() {
+      // Clear everything and recreate visualization
+      updateVisualization();
+      
+      // Reset progress bar
+      document.getElementById('progress-bar').style.width = '0%';
+      
+      // Update metrics
+      updateMetrics();
+      
+      // Visual feedback for the reset button
+      const resetButton = document.getElementById('reset-button');
+      resetButton.style.transform = 'rotate(180deg)';
+      setTimeout(() => {
+        resetButton.style.transform = '';
+      }, 300);
+    }
+    
+    // Handle window resize
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      composer.setSize(window.innerWidth, window.innerHeight);
+      
+      // Resize wave canvas
+      const waveContainer = document.getElementById('wave-visualization');
+      const waveCanvas = waveContainer.querySelector('canvas');
+      if (waveCanvas) {
+        waveCanvas.width = waveContainer.clientWidth;
+        waveCanvas.height = waveContainer.clientHeight;
+        drawWaveform(waveCanvas);
+      }
+    }
+    
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      const time = performance.now() * 0.001; // Time in seconds
+      const dt = 1/60; // Fixed time step
+      
+      if (isPlaying) {
+        // Update controls
+        controls.update();
+        
+        // Update progress bar (just for visual effect)
+        const progress = (time % 60) / 60 * 100;
+        document.getElementById('progress-bar').style.width = `${progress}%`;
+        
+        // Update simulation time display
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        document.getElementById('sim-time').textContent = 
+          `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        // Get animation speed multiplier
+        const speedFactor = parseInt(document.getElementById('animation-speed').value) / 5;
+        
+        // Mode-specific animations
+        switch (currentVisualizationMode) {
+          case 'bloch':
+            animateBlochSpheres(time, dt, speedFactor);
+            break;
+          case 'circuit':
+            animateCircuit(time, dt, speedFactor);
+            break;
+          case 'wave':
+            animateWaveFunction(time, dt, speedFactor);
+            break;
+          case 'entanglement':
+            animateEntanglement(time, dt, speedFactor);
+            break;
+        }
+        
+        // Animate particles
+        animateParticles(time, dt, speedFactor);
+      }
+      
+      // Render scene with post-processing
+      composer.render();
+    }
+    
+    // Animate Bloch spheres
+    function animateBlochSpheres(time, dt, speedFactor) {
+      blochSpheres.forEach((blochSphere, index) => {
+        // Rotate the Bloch sphere
+        blochSphere.group.rotation.y += blochSphere.rotationSpeed * speedFactor;
+        blochSphere.group.rotation.z += blochSphere.rotationSpeed * 0.5 * speedFactor;
+        
+        // Animate state vector
+        const theta = blochSphere.state.theta;
+        const phi = blochSphere.state.phi + time * 0.5 * speedFactor;
+        
+        const stateX = Math.sin(theta) * Math.cos(phi) * 2;
+        const stateY = Math.sin(theta) * Math.sin(phi) * 2;
+        const stateZ = Math.cos(theta) * 2;
+        
+        // Update state vector line
+        const positions = blochSphere.stateVector.geometry.attributes.position.array;
+        positions[3] = stateX;
+        positions[4] = stateY;
+        positions[5] = stateZ;
+        blochSphere.stateVector.geometry.attributes.position.needsUpdate = true;
+        
+        // Update arrow and state sphere
+        blochSphere.arrow.position.set(stateX, stateY, stateZ);
+        blochSphere.arrow.lookAt(0, 0, 0);
+        blochSphere.arrow.rotateX(Math.PI / 2);
+        
+        blochSphere.stateSphere.position.set(stateX, stateY, stateZ);
+        
+        // Pulse effect on state sphere
+        const pulse = 1 + 0.2 * Math.sin(time * 3 + index);
+        blochSphere.stateSphere.scale.set(pulse, pulse, pulse);
+      });
+    }
+    
+    // Animate circuit
+    function animateCircuit(time, dt, speedFactor) {
+      // Animate gates with pulsing effect
+      circuitElements.forEach((element, index) => {
+        if (element.isMesh && element.geometry.type === 'BoxGeometry') {
+          // This is a gate, add pulsing effect
+          const pulse = 1 + 0.1 * Math.sin(time * 3 + index);
+          element.scale.set(pulse, pulse, pulse);
+          
+          // Also adjust emissive intensity
+          if (element.material.emissive) {
+            element.material.emissiveIntensity = 0.2 + 0.1 * Math.sin(time * 3 + index);
+          }
+        } else if (element.isMesh && element.geometry.type === 'SphereGeometry') {
+          // Qubits and control nodes
+          const pulse = 1 + 0.15 * Math.sin(time * 2 + index * 0.7);
+          element.scale.set(pulse, pulse, pulse);
+        }
+      });
+    }
+    
+    // Animate wave function
+    function animateWaveFunction(time, dt, speedFactor) {
+      waves.forEach((wave, index) => {
+        if (index === 0) return; // Skip base plane
+        
+        // Add slight movement to wave
+        wave.rotation.z = Math.sin(time * 0.5) * 0.1;
+        
+        // Pulsing effect
+        const pulse = 1 + 0.1 * Math.sin(time * 2);
+        wave.scale.set(1, pulse, 1);
+      });
+    }
+    
+    // Animate entanglement visualization
+    function animateEntanglement(time, dt, speedFactor) {
+      // Animate entanglement lines
+      entanglementLines.forEach(line => {
+        const userData = line.userData;
+        
+        // Pulse effect based on entanglement strength
+        if (userData) {
+          const pulse = userData.strength * (0.7 + 0.3 * Math.sin(time * userData.pulseSpeed + userData.pulsePhase));
+          line.material.opacity = pulse * 0.7;
+        }
+      });
+      
+      // Animate central core if present
+      circuitElements.forEach(element => {
+        if (element.geometry && element.geometry.type === 'OctahedronGeometry') {
+          element.rotation.x += 0.01 * speedFactor;
+          element.rotation.y += 0.015 * speedFactor;
+          element.rotation.z += 0.005 * speedFactor;
+          
+          // Pulsing effect
+          const pulse = 1 + 0.2 * Math.sin(time * 2);
+          element.scale.set(pulse, pulse, pulse);
+        }
+      });
+    }
+    
+    // Animate particles
+    function animateParticles(time, dt, speedFactor) {
+      particles.forEach(particle => {
+        const userData = particle.userData;
+        
+        if (!userData) return;
+        
+        if (userData.curve) {
+          // Particles moving along a curve
+          const positions = particle.geometry.attributes.position.array;
+          
+          for (let i = 0; i < positions.length / 3; i++) {
+            // Move particle along the curve
+            userData.time += dt * speedFactor * userData.speed * userData.direction;
+            if (userData.time > 1) userData.time = 0;
+            if (userData.time < 0) userData.time = 1;
+            
+            const t = (i / (positions.length / 3) + userData.time) % 1;
+            const point = userData.curve.getPoint(t);
+            
+            positions[i * 3] = point.x;
+            positions[i * 3 + 1] = point.y;
+            positions[i * 3 + 2] = point.z;
+          }
+          
+          particle.geometry.attributes.position.needsUpdate = true;
+        } else if (userData.originalPositions) {
+          // Particles around Bloch spheres or in general space
+          const positions = particle.geometry.attributes.position.array;
+          
+          userData.time += dt * speedFactor;
+          
+          for (let i = 0; i < positions.length / 3; i++) {
+            const originalX = userData.originalPositions[i * 3];
+            const originalY = userData.originalPositions[i * 3 + 1];
+            const originalZ = userData.originalPositions[i * 3 + 2];
+            
+            if (userData.center) {
+              // Particles orbiting around center
+              const angle = userData.time * userData.speed + i * 0.1;
+              const radius = userData.radius + Math.sin(time * 0.5 + i * 0.2) * 0.3;
+              
+              // Calculate position in orbit
+              const dx = Math.cos(angle) * Math.sin(i) * radius;
+              const dy = Math.sin(angle) * Math.sin(i * 0.7) * radius;
+              const dz = Math.cos(angle * 0.7) * Math.sin(i * 0.5) * radius;
+              
+              positions[i * 3] = userData.center.x + dx;
+              positions[i * 3 + 1] = userData.center.y + dy;
+              positions[i * 3 + 2] = userData.center.z + dz;
+            } else {
+              // Free-floating particles with slight animation
+              positions[i * 3] = originalX + Math.sin(time + i * 0.1) * 0.2;
+              positions[i * 3 + 1] = originalY + Math.cos(time * 1.1 + i * 0.1) * 0.2;
+              positions[i * 3 + 2] = originalZ + Math.sin(time * 0.7 + i * 0.1) * 0.2;
+            }
+          }
+          
+          particle.geometry.attributes.position.needsUpdate = true;
+          
+          // Color animation
+          if (userData.hue !== undefined) {
+            const hue = (userData.hue + time * 0.05) % 1;
+            particle.material.color.setHSL(hue, 1, 0.5);
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

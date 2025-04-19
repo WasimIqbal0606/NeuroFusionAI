@@ -1,0 +1,2203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeuroFusionOS - Neural Network Rhythm Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.146.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.0/gsap.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #00f0ff;
+      --secondary-color: #7700ff;
+      --accent-color: #ff00aa;
+      --background-dark: #050510;
+      --background-medium: #080830;
+      --background-light: #10105a;
+      --text-primary: #ffffff;
+      --text-secondary: #aaaaff;
+      --success-color: #00ffa3;
+      --warning-color: #ffcc00;
+      --error-color: #ff2266;
+      --glow-primary: 0 0 10px rgba(0, 240, 255, 0.7);
+      --glow-secondary: 0 0 15px rgba(119, 0, 255, 0.7);
+      --glow-accent: 0 0 15px rgba(255, 0, 170, 0.7);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--background-dark);
+      color: var(--text-primary);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      position: relative;
+    }
+    
+    .container {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      grid-template-columns: 300px 1fr 300px;
+      grid-template-areas:
+        "header header header"
+        "left-panel main right-panel"
+        "footer footer footer";
+      height: 100vh;
+      padding: 20px;
+      gap: 20px;
+    }
+    
+    .panel {
+      background: rgba(8, 8, 48, 0.7);
+      backdrop-filter: blur(15px);
+      border-radius: 20px;
+      padding: 20px;
+    }
+    
+    .header {
+      grid-area: header;
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      box-shadow: var(--glow-primary), inset 0 0 20px rgba(0, 240, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 1.4rem;
+      background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .logo-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      box-shadow: var(--glow-primary);
+    }
+    
+    .nav-controls {
+      display: flex;
+      gap: 15px;
+    }
+    
+    .nav-item {
+      padding: 8px 15px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .nav-item:hover, .nav-item.active {
+      background: rgba(0, 240, 255, 0.1);
+      box-shadow: var(--glow-primary);
+      transform: translateY(-2px);
+    }
+    
+    .left-panel {
+      grid-area: left-panel;
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      box-shadow: var(--glow-primary), inset 0 0 20px rgba(0, 240, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+    }
+    
+    .control-section {
+      margin-bottom: 15px;
+    }
+    
+    .section-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .control-group {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      padding: 15px;
+      border: 1px solid rgba(0, 240, 255, 0.1);
+    }
+    
+    .control-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .control-row:last-child {
+      margin-bottom: 0;
+    }
+    
+    .control-label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      width: 100px;
+      flex-shrink: 0;
+    }
+    
+    .control-input {
+      flex: 1;
+    }
+    
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .slider {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+    }
+    
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      cursor: pointer;
+      box-shadow: var(--glow-primary);
+    }
+    
+    .slider-value {
+      font-size: 0.8rem;
+      font-family: 'Orbitron', sans-serif;
+      width: 40px;
+      text-align: center;
+    }
+    
+    .button-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    .control-button {
+      flex: 1;
+      padding: 8px 0;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .control-button:hover, .control-button.active {
+      background: rgba(0, 240, 255, 0.1);
+      box-shadow: var(--glow-primary);
+      transform: translateY(-2px);
+    }
+    
+    .control-button.accent {
+      border-color: rgba(255, 0, 170, 0.3);
+    }
+    
+    .control-button.accent:hover {
+      background: rgba(255, 0, 170, 0.1);
+      box-shadow: var(--glow-accent);
+    }
+    
+    .toggle-button {
+      width: 50px;
+      height: 24px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .toggle-button::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--text-secondary);
+      transition: all 0.3s ease;
+    }
+    
+    .toggle-button.active {
+      background: rgba(0, 240, 255, 0.2);
+      border-color: rgba(0, 240, 255, 0.4);
+    }
+    
+    .toggle-button.active::after {
+      left: calc(100% - 20px);
+      background: var(--primary-color);
+      box-shadow: var(--glow-primary);
+    }
+    
+    .right-panel {
+      grid-area: right-panel;
+      border: 1px solid rgba(119, 0, 255, 0.2);
+      box-shadow: var(--glow-secondary), inset 0 0 20px rgba(119, 0, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .main-content {
+      grid-area: main;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .visualization-container {
+      flex: 1;
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+      min-height: 200px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(0, 240, 255, 0.1);
+    }
+    
+    .footer {
+      grid-area: footer;
+      border: 1px solid rgba(255, 0, 170, 0.2);
+      box-shadow: var(--glow-accent), inset 0 0 20px rgba(255, 0, 170, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .footer-logo {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.9rem;
+      color: var(--accent-color);
+    }
+    
+    .transport-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .transport-button {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 0, 170, 0.3);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: var(--accent-color);
+    }
+    
+    .transport-button:hover {
+      background: rgba(255, 0, 170, 0.1);
+      box-shadow: var(--glow-accent);
+      transform: scale(1.1);
+    }
+    
+    .transport-button.accent {
+      background: rgba(255, 0, 170, 0.2);
+      color: white;
+    }
+    
+    .footer-info {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    
+    .tempo-display {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.5rem;
+      color: var(--accent-color);
+      margin-left: 10px;
+    }
+    
+    /* Sequencer Specific Styles */
+    .sequencer-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding: 15px;
+      height: 100%;
+      overflow-y: auto;
+    }
+    
+    .grid-row {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+    
+    .row-label {
+      width: 80px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      text-align: right;
+      padding-right: 10px;
+      color: var(--text-secondary);
+    }
+    
+    .grid-cell {
+      width: 40px;
+      height: 40px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(119, 0, 255, 0.2);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .grid-cell.active {
+      background: rgba(119, 0, 255, 0.2);
+      border-color: rgba(119, 0, 255, 0.6);
+      box-shadow: 0 0 15px rgba(119, 0, 255, 0.4);
+    }
+    
+    .grid-cell.accent {
+      background: rgba(255, 0, 170, 0.2);
+      border-color: rgba(255, 0, 170, 0.6);
+      box-shadow: 0 0 15px rgba(255, 0, 170, 0.4);
+    }
+    
+    .grid-cell.playing {
+      background: rgba(0, 240, 255, 0.3);
+      border-color: rgba(0, 240, 255, 0.8);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+      transform: scale(1.1);
+    }
+    
+    /* Neural Network Visualization */
+    .network-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    
+    /* Sound Visualizer */
+    .visualizer-container {
+      height: 150px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 20px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(0, 240, 255, 0.1);
+    }
+    
+    .visualizer-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.9rem;
+      color: var(--secondary-color);
+      margin-bottom: 10px;
+    }
+    
+    canvas.visualizer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 90%;
+    }
+    
+    /* Preset Selector */
+    .preset-section {
+      margin-top: 20px;
+    }
+    
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    
+    .preset-button {
+      padding: 10px;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(119, 0, 255, 0.2);
+      border-radius: 10px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .preset-button:hover {
+      background: rgba(119, 0, 255, 0.1);
+      transform: translateY(-2px);
+      box-shadow: var(--glow-secondary);
+    }
+    
+    /* Neural Network Controls */
+    .complexity-display {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    .complexity-item {
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .complexity-label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    
+    .complexity-value {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.9rem;
+      color: var(--primary-color);
+    }
+    
+    .pattern-feedback {
+      margin-top: 20px;
+    }
+    
+    .feedback-message {
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      background: rgba(0, 255, 163, 0.1);
+      border: 1px solid rgba(0, 255, 163, 0.3);
+      color: var(--success-color);
+    }
+    
+    /* Stats Display */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin-top: 10px;
+    }
+    
+    .stat-item {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      padding: 12px;
+      border: 1px solid rgba(119, 0, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+    
+    .stat-item:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--glow-secondary);
+    }
+    
+    .stat-value {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 5px;
+    }
+    
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    /* Media Queries */
+    @media (max-width: 1200px) {
+      .container {
+        grid-template-columns: 250px 1fr 250px;
+      }
+    }
+    
+    @media (max-width: 992px) {
+      .container {
+        grid-template-columns: 200px 1fr;
+        grid-template-areas:
+          "header header"
+          "left-panel main"
+          "footer footer";
+      }
+      
+      .right-panel {
+        display: none;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "header"
+          "main"
+          "left-panel"
+          "footer";
+      }
+      
+      .header {
+        padding: 10px 15px;
+      }
+      
+      .logo {
+        font-size: 1.2rem;
+      }
+      
+      .nav-controls {
+        display: none;
+      }
+      
+      .left-panel {
+        margin-top: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="panel header">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z" fill="white"/>
+            <path d="M12 6C8.69 6 6 8.69 6 12C6 15.31 8.69 18 12 18C15.31 18 18 15.31 18 12C18 8.69 15.31 6 12 6ZM12 16C9.79 16 8 14.21 8 12C8 9.79 9.79 8 12 8C14.21 8 16 9.79 16 12C16 14.21 14.21 16 12 16Z" fill="white"/>
+          </svg>
+        </div>
+        <div>Neural Rhythm Generator</div>
+      </div>
+      
+      <div class="nav-controls">
+        <div class="nav-item active">RHYTHM</div>
+        <div class="nav-item">MELODY</div>
+        <div class="nav-item">HARMONY</div>
+        <div class="nav-item">DASHBOARD</div>
+      </div>
+    </header>
+    
+    <section class="panel left-panel">
+      <div class="control-section">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M15.9 18.5l-6-5.5 6-5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          NEURAL PARAMETERS
+        </div>
+        <div class="control-group">
+          <div class="control-row">
+            <div class="control-label">Complexity</div>
+            <div class="control-input slider-container">
+              <input type="range" class="slider" id="complexity" min="1" max="10" value="5">
+              <div class="slider-value" id="complexity-value">5</div>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">Creativity</div>
+            <div class="control-input slider-container">
+              <input type="range" class="slider" id="creativity" min="0" max="100" value="70">
+              <div class="slider-value" id="creativity-value">70</div>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">Coherence</div>
+            <div class="control-input slider-container">
+              <input type="range" class="slider" id="coherence" min="0" max="100" value="80">
+              <div class="slider-value" id="coherence-value">80</div>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">Energy</div>
+            <div class="control-input slider-container">
+              <input type="range" class="slider" id="energy" min="0" max="100" value="60">
+              <div class="slider-value" id="energy-value">60</div>
+            </div>
+          </div>
+          
+          <div class="button-row">
+            <div class="control-button" id="generate-button">GENERATE</div>
+            <div class="control-button accent" id="evolve-button">EVOLVE</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="control-section">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9 17H7V10H9V17ZM13 17H11V7H13V17ZM17 17H15V13H17V17ZM19 19H5V5H19V19.1M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3Z" fill="currentColor"/>
+          </svg>
+          RHYTHMIC PARAMETERS
+        </div>
+        <div class="control-group">
+          <div class="control-row">
+            <div class="control-label">Tempo</div>
+            <div class="control-input slider-container">
+              <input type="range" class="slider" id="tempo" min="60" max="200" value="120">
+              <div class="slider-value" id="tempo-value">120</div>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">Swing</div>
+            <div class="control-input slider-container">
+              <input type="range" class="slider" id="swing" min="0" max="100" value="20">
+              <div class="slider-value" id="swing-value">20</div>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">Steps</div>
+            <div class="control-input slider-container">
+              <input type="range" class="slider" id="steps" min="4" max="16" step="4" value="8">
+              <div class="slider-value" id="steps-value">8</div>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">Layers</div>
+            <div class="control-input slider-container">
+              <input type="range" class="slider" id="layers" min="3" max="8" value="5">
+              <div class="slider-value" id="layers-value">5</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="control-section">
+        <div class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          SOUND SETTINGS
+        </div>
+        <div class="control-group">
+          <div class="control-row">
+            <div class="control-label">Volume</div>
+            <div class="control-input slider-container">
+              <input type="range" class="slider" id="volume" min="0" max="100" value="80">
+              <div class="slider-value" id="volume-value">80</div>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">Reverb</div>
+            <div class="control-input slider-container">
+              <input type="range" class="slider" id="reverb" min="0" max="100" value="30">
+              <div class="slider-value" id="reverb-value">30</div>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">Delay</div>
+            <div class="control-input slider-container">
+              <input type="range" class="slider" id="delay" min="0" max="100" value="20">
+              <div class="slider-value" id="delay-value">20</div>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-label">Visualization</div>
+            <div class="control-input">
+              <div class="toggle-button active" id="visualization-toggle"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="preset-section">
+        <div class="section-title">PRESETS</div>
+        <div class="preset-grid">
+          <div class="preset-button" data-preset="techno">TECHNO</div>
+          <div class="preset-button" data-preset="jazz">JAZZ</div>
+          <div class="preset-button" data-preset="african">AFRICAN</div>
+          <div class="preset-button" data-preset="ambient">AMBIENT</div>
+          <div class="preset-button" data-preset="glitch">GLITCH</div>
+          <div class="preset-button" data-preset="random">RANDOM</div>
+        </div>
+      </div>
+    </section>
+    
+    <section class="main-content">
+      <div class="visualization-container">
+        <div id="sequencer-grid" class="sequencer-grid">
+          <!-- Sequencer grid will be generated here by JavaScript -->
+        </div>
+        <div id="network-container" class="network-container">
+          <!-- Three.js neural network visualization will go here -->
+        </div>
+      </div>
+      
+      <div class="visualizer-container">
+        <div class="visualizer-title">WAVEFORM</div>
+        <canvas id="visualizer" class="visualizer"></canvas>
+      </div>
+    </section>
+    
+    <section class="panel right-panel">
+      <div class="section-title">NEURAL ANALYSIS</div>
+      
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value" id="novelty-value">84%</div>
+          <div class="stat-label">Novelty Score</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="balance-value">78%</div>
+          <div class="stat-label">Rhythmic Balance</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="complexity-score">6.3</div>
+          <div class="stat-label">Complexity Score</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="syncopation">68%</div>
+          <div class="stat-label">Syncopation</div>
+        </div>
+      </div>
+      
+      <div class="complexity-display">
+        <div class="section-title">NETWORK COMPLEXITY</div>
+        <div class="complexity-item">
+          <div class="complexity-label">Neurons</div>
+          <div class="complexity-value">128</div>
+        </div>
+        <div class="complexity-item">
+          <div class="complexity-label">Connections</div>
+          <div class="complexity-value">1,024</div>
+        </div>
+        <div class="complexity-item">
+          <div class="complexity-label">Hidden Layers</div>
+          <div class="complexity-value">3</div>
+        </div>
+        <div class="complexity-item">
+          <div class="complexity-label">Activation</div>
+          <div class="complexity-value">Sigmoid</div>
+        </div>
+        <div class="complexity-item">
+          <div class="complexity-label">Learning Rate</div>
+          <div class="complexity-value">0.0015</div>
+        </div>
+      </div>
+      
+      <div class="pattern-feedback">
+        <div class="section-title">PATTERN ANALYSIS</div>
+        <div class="feedback-message">
+          Pattern shows high rhythmic complexity with balanced syncopation and good coherence. Consider evolving with more energy for increased dynamics.
+        </div>
+      </div>
+    </section>
+    
+    <footer class="panel footer">
+      <div class="footer-logo">NeuroFusionOS</div>
+      
+      <div class="transport-controls">
+        <div class="transport-button" id="stop-button">■</div>
+        <div class="transport-button accent" id="play-button">▶</div>
+        <div class="transport-button" id="randomize-button">⟳</div>
+        <div class="tempo-display"><span id="tempo-display">120</span> BPM</div>
+      </div>
+      
+      <div class="footer-info">Created patterns can be exported to MIDI</div>
+    </footer>
+  </div>
+  
+  <script>
+    // Global variables for sequencer
+    let sequencerGrid = [];
+    let numSteps = 8;
+    let numLayers = 5;
+    let isPlaying = false;
+    let currentStep = -1;
+    let tempo = 120;
+    
+    // Names for sequencer rows
+    const layerNames = [
+      "Kick",
+      "Snare",
+      "Hi-Hat",
+      "Perc 1",
+      "Perc 2",
+      "Clap",
+      "Tom",
+      "Cymbal"
+    ];
+    
+    // Tone.js objects
+    let toneTransport;
+    let players = {};
+    let analyzer;
+    let visualizer;
+    let visualizerContext;
+    
+    // Neural network visualization
+    let scene, camera, renderer, composer;
+    let neurons = [];
+    let connections = [];
+    let isVisualizationActive = true;
+    
+    // Initialize everything
+    document.addEventListener('DOMContentLoaded', () => {
+      initSequencer();
+      initControls();
+      initThree();
+      initTone();
+      animate();
+    });
+    
+    // Initialize sequencer grid
+    function initSequencer() {
+      numSteps = parseInt(document.getElementById('steps').value);
+      numLayers = parseInt(document.getElementById('layers').value);
+      
+      const sequencerContainer = document.getElementById('sequencer-grid');
+      sequencerContainer.innerHTML = '';
+      
+      // Create rows and cells
+      for (let row = 0; row < numLayers; row++) {
+        const rowElement = document.createElement('div');
+        rowElement.className = 'grid-row';
+        
+        // Layer label
+        const label = document.createElement('div');
+        label.className = 'row-label';
+        label.textContent = layerNames[row];
+        rowElement.appendChild(label);
+        
+        sequencerGrid[row] = [];
+        
+        // Create cells
+        for (let col = 0; col < numSteps; col++) {
+          const cell = document.createElement('div');
+          cell.className = 'grid-cell';
+          cell.dataset.row = row;
+          cell.dataset.col = col;
+          
+          // Add click event to toggle cell
+          cell.addEventListener('click', (e) => {
+            toggleCell(row, col, e.shiftKey); // Pass shiftKey to detect accent
+          });
+          
+          rowElement.appendChild(cell);
+          sequencerGrid[row][col] = false; // Initialize as inactive
+        }
+        
+        sequencerContainer.appendChild(rowElement);
+      }
+    }
+    
+    // Toggle cell state
+    function toggleCell(row, col, isAccent) {
+      const cellElement = document.querySelector(`.grid-cell[data-row="${row}"][data-col="${col}"]`);
+      
+      if (cellElement.classList.contains('active')) {
+        if (cellElement.classList.contains('accent') || !isAccent) {
+          // If already accented or not trying to accent, turn off
+          cellElement.classList.remove('active', 'accent');
+          sequencerGrid[row][col] = false;
+        } else {
+          // If active but not accented, and trying to accent, make it accented
+          cellElement.classList.add('accent');
+          sequencerGrid[row][col] = 'accent';
+        }
+      } else {
+        // Turn on cell
+        cellElement.classList.add('active');
+        if (isAccent) {
+          cellElement.classList.add('accent');
+          sequencerGrid[row][col] = 'accent';
+        } else {
+          sequencerGrid[row][col] = true;
+        }
+      }
+      
+      // Generate neural insight into current pattern
+      updateNeuralAnalysis();
+    }
+    
+    // Initialize UI controls
+    function initControls() {
+      // Sliders
+      const sliders = [
+        { id: 'complexity', valueId: 'complexity-value' },
+        { id: 'creativity', valueId: 'creativity-value' },
+        { id: 'coherence', valueId: 'coherence-value' },
+        { id: 'energy', valueId: 'energy-value' },
+        { id: 'tempo', valueId: 'tempo-value', callback: updateTempo },
+        { id: 'swing', valueId: 'swing-value', callback: updateSwing },
+        { id: 'steps', valueId: 'steps-value', callback: updateSteps },
+        { id: 'layers', valueId: 'layers-value', callback: updateLayers },
+        { id: 'volume', valueId: 'volume-value', callback: updateVolume },
+        { id: 'reverb', valueId: 'reverb-value' },
+        { id: 'delay', valueId: 'delay-value' }
+      ];
+      
+      sliders.forEach(slider => {
+        const sliderElement = document.getElementById(slider.id);
+        const valueElement = document.getElementById(slider.valueId);
+        
+        // Initial value
+        valueElement.textContent = sliderElement.value;
+        
+        // Update on change
+        sliderElement.addEventListener('input', () => {
+          valueElement.textContent = sliderElement.value;
+          if (slider.callback) slider.callback();
+        });
+      });
+      
+      // Transport buttons
+      document.getElementById('play-button').addEventListener('click', togglePlayback);
+      document.getElementById('stop-button').addEventListener('click', stopSequencer);
+      document.getElementById('randomize-button').addEventListener('click', randomizePattern);
+      
+      // Pattern generation buttons
+      document.getElementById('generate-button').addEventListener('click', generatePattern);
+      document.getElementById('evolve-button').addEventListener('click', evolvePattern);
+      
+      // Visualization toggle
+      document.getElementById('visualization-toggle').addEventListener('click', function() {
+        this.classList.toggle('active');
+        isVisualizationActive = this.classList.contains('active');
+        toggleVisualization(isVisualizationActive);
+      });
+      
+      // Preset buttons
+      document.querySelectorAll('.preset-button').forEach(button => {
+        button.addEventListener('click', () => {
+          const preset = button.getAttribute('data-preset');
+          applyPreset(preset);
+        });
+      });
+      
+      // Apply initial preset
+      applyPreset('techno');
+    }
+    
+    // Initialize Tone.js
+    function initTone() {
+      // Create audio context
+      Tone.start();
+      toneTransport = Tone.Transport;
+      toneTransport.bpm.value = tempo;
+      
+      // Create drum samples
+      const samples = {
+        'kick': 'https://tonejs.github.io/audio/drum-samples/CR78/kick.mp3',
+        'snare': 'https://tonejs.github.io/audio/drum-samples/CR78/snare.mp3',
+        'hihat': 'https://tonejs.github.io/audio/drum-samples/CR78/hihat.mp3',
+        'tom': 'https://tonejs.github.io/audio/drum-samples/CR78/tom.mp3',
+        'rim': 'https://tonejs.github.io/audio/drum-samples/CR78/rim.mp3',
+        'clap': 'https://tonejs.github.io/audio/drum-samples/KPR77/clap.mp3',
+        'perc': 'https://tonejs.github.io/audio/drum-samples/CR78/tamb.mp3',
+        'cymbal': 'https://tonejs.github.io/audio/drum-samples/CR78/cym.mp3',
+      };
+      
+      // Create audio effects
+      const reverb = new Tone.Reverb(2.5).toDestination();
+      reverb.wet.value = 0.3; // 30% wet signal
+      
+      const delay = new Tone.FeedbackDelay("8n", 0.5).connect(reverb);
+      delay.wet.value = 0.2; // 20% wet signal
+      
+      // Load samples
+      players = new Tone.Players({
+        'kick': samples.kick,
+        'snare': samples.snare,
+        'hihat': samples.hihat,
+        'perc1': samples.rim,
+        'perc2': samples.perc,
+        'clap': samples.clap,
+        'tom': samples.tom,
+        'cymbal': samples.cymbal
+      }).connect(delay);
+      
+      // Analyzer for visualization
+      analyzer = new Tone.Analyser('waveform', 1024);
+      players.connect(analyzer);
+      
+      // Set up visualizer canvas
+      visualizer = document.getElementById('visualizer');
+      visualizerContext = visualizer.getContext('2d');
+      
+      // Resize canvas
+      visualizer.width = visualizer.clientWidth;
+      visualizer.height = visualizer.clientHeight;
+      
+      // Set up sequencer loop
+      toneTransport.scheduleRepeat((time) => {
+        // Advance to next step
+        currentStep = (currentStep + 1) % numSteps;
+        
+        // Update UI to show current step
+        updateCurrentStep();
+        
+        // Play sounds for this step
+        for (let layer = 0; layer < numLayers; layer++) {
+          if (sequencerGrid[layer][currentStep]) {
+            const soundName = getSoundForLayer(layer);
+            const velocity = sequencerGrid[layer][currentStep] === 'accent' ? 1.0 : 0.7;
+            
+            // Play the sound
+            players.player(soundName).volume.value = velocity * 20 - 20; // Convert to dB
+            players.player(soundName).start(time);
+            
+            // Trigger visualization effect
+            triggerNeuronForLayer(layer);
+          }
+        }
+      }, "8n");
+      
+      // Set swing
+      updateSwing();
+    }
+    
+    // Map layer index to sound name
+    function getSoundForLayer(layer) {
+      const sounds = ['kick', 'snare', 'hihat', 'perc1', 'perc2', 'clap', 'tom', 'cymbal'];
+      return sounds[layer] || 'kick';
+    }
+    
+    // Update UI to show current step
+    function updateCurrentStep() {
+      // Remove 'playing' class from all cells
+      document.querySelectorAll('.grid-cell.playing').forEach(cell => {
+        cell.classList.remove('playing');
+      });
+      
+      // Add 'playing' class to current step cells
+      for (let layer = 0; layer < numLayers; layer++) {
+        const cell = document.querySelector(`.grid-cell[data-row="${layer}"][data-col="${currentStep}"]`);
+        if (cell) cell.classList.add('playing');
+      }
+    }
+    
+    // Toggle playback
+    function togglePlayback() {
+      isPlaying = !isPlaying;
+      
+      const playButton = document.getElementById('play-button');
+      
+      if (isPlaying) {
+        playButton.innerHTML = '❚❚'; // Pause symbol
+        startTone();
+        toneTransport.start();
+      } else {
+        playButton.innerHTML = '▶'; // Play symbol
+        toneTransport.pause();
+      }
+    }
+    
+    // Start Tone audio context
+    function startTone() {
+      if (Tone.context.state !== 'running') {
+        Tone.start();
+      }
+    }
+    
+    // Stop sequencer
+    function stopSequencer() {
+      isPlaying = false;
+      document.getElementById('play-button').innerHTML = '▶';
+      toneTransport.stop();
+      currentStep = -1;
+      
+      // Remove 'playing' class from all cells
+      document.querySelectorAll('.grid-cell.playing').forEach(cell => {
+        cell.classList.remove('playing');
+      });
+    }
+    
+    // Update tempo
+    function updateTempo() {
+      tempo = parseInt(document.getElementById('tempo').value);
+      document.getElementById('tempo-display').textContent = tempo;
+      toneTransport.bpm.value = tempo;
+    }
+    
+    // Update swing
+    function updateSwing() {
+      const swing = parseInt(document.getElementById('swing').value) / 100;
+      toneTransport.swing = swing;
+      toneTransport.swingSubdivision = "16n";
+    }
+    
+    // Update steps
+    function updateSteps() {
+      numSteps = parseInt(document.getElementById('steps').value);
+      initSequencer();
+      generatePattern(); // Generate a new pattern with the new step count
+    }
+    
+    // Update layers
+    function updateLayers() {
+      numLayers = parseInt(document.getElementById('layers').value);
+      initSequencer();
+      generatePattern(); // Generate a new pattern with the new layer count
+    }
+    
+    // Update volume
+    function updateVolume() {
+      const volume = parseInt(document.getElementById('volume').value);
+      Tone.Destination.volume.value = Tone.gainToDb(volume / 100);
+    }
+    
+    // Randomize pattern
+    function randomizePattern() {
+      clearPattern();
+      
+      const density = Math.random() * 0.5 + 0.1; // 10% to 60% filled
+      
+      for (let row = 0; row < numLayers; row++) {
+        for (let col = 0; col < numSteps; col++) {
+          if (Math.random() < density) {
+            // Decide if it should be accented
+            const isAccent = Math.random() < 0.3;
+            toggleCell(row, col, isAccent);
+          }
+        }
+      }
+      
+      updateNeuralAnalysis();
+      updateNeuralVisualization();
+    }
+    
+    // Clear pattern
+    function clearPattern() {
+      document.querySelectorAll('.grid-cell.active').forEach(cell => {
+        cell.classList.remove('active', 'accent');
+      });
+      
+      for (let row = 0; row < numLayers; row++) {
+        for (let col = 0; col < numSteps; col++) {
+          sequencerGrid[row][col] = false;
+        }
+      }
+    }
+    
+    // Apply preset pattern
+    function applyPreset(preset) {
+      clearPattern();
+      
+      // Set parameters based on preset
+      let complexity, creativity, coherence, energy, tempo, swing;
+      
+      switch (preset) {
+        case 'techno':
+          complexity = 4;
+          creativity = 40;
+          coherence = 90;
+          energy = 80;
+          tempo = 130;
+          swing = 10;
+          
+          // Four on the floor kick pattern
+          for (let i = 0; i < numSteps; i += 2) {
+            toggleCell(0, i, i % 4 === 0); // Accent on every 4th step
+          }
+          
+          // Offbeat hi-hats
+          for (let i = 1; i < numSteps; i += 2) {
+            toggleCell(2, i, false);
+          }
+          
+          // Snare on 2 and 4
+          if (numSteps >= 8) {
+            toggleCell(1, 2, true);
+            toggleCell(1, 6, false);
+          } else {
+            toggleCell(1, 2, true);
+          }
+          
+          break;
+          
+        case 'jazz':
+          complexity = 8;
+          creativity = 80;
+          coherence = 70;
+          energy = 50;
+          tempo = 95;
+          swing = 60;
+          
+          // Ride cymbal pattern
+          for (let i = 0; i < numSteps; i++) {
+            if (i % 3 === 0 || i % 4 === 0) {
+              toggleCell(2, i, i % 3 === 0 && i % 4 === 0);
+            }
+          }
+          
+          // Kick and snare interplay
+          toggleCell(0, 0, true);
+          toggleCell(0, 5, false);
+          toggleCell(1, 2, true);
+          toggleCell(1, 7, false);
+          
+          break;
+          
+        case 'african':
+          complexity = 7;
+          creativity = 70;
+          coherence = 90;
+          energy = 75;
+          tempo = 110;
+          swing = 30;
+          
+          // Polyrhythmic patterns
+          // Layer 1: 4-beat pattern
+          for (let i = 0; i < numSteps; i += 4) {
+            toggleCell(0, i, true);
+          }
+          
+          // Layer 2: 3-beat pattern
+          for (let i = 0; i < numSteps; i += 3) {
+            toggleCell(1, i % numSteps, i === 0);
+          }
+          
+          // Layer 3: 2-beat pattern offset
+          for (let i = 1; i < numSteps; i += 2) {
+            toggleCell(2, i, false);
+          }
+          
+          break;
+          
+        case 'ambient':
+          complexity = 3;
+          creativity = 90;
+          coherence = 60;
+          energy = 20;
+          tempo = 80;
+          swing = 20;
+          
+          // Sparse, atmospheric pattern
+          toggleCell(0, 0, true);
+          toggleCell(0, 7, false);
+          
+          if (numSteps >= 8) {
+            toggleCell(1, 3, false);
+            toggleCell(2, 5, true);
+            toggleCell(3, 2, false);
+            toggleCell(4, 6, true);
+          } else {
+            toggleCell(1, 2, false);
+            toggleCell(2, 1, true);
+            toggleCell(3, 3, false);
+          }
+          
+          break;
+          
+        case 'glitch':
+          complexity = 9;
+          creativity = 95;
+          coherence = 40;
+          energy = 70;
+          tempo = 140;
+          swing = 5;
+          
+          // Unpredictable, glitchy pattern
+          for (let row = 0; row < numLayers; row++) {
+            for (let col = 0; col < numSteps; col++) {
+              if (Math.random() < 0.2) {
+                toggleCell(row, col, Math.random() < 0.5);
+              }
+            }
+          }
+          
+          // Add some consistency
+          toggleCell(0, 0, true);
+          toggleCell(0, 4, true);
+          
+          break;
+          
+        case 'random':
+          // Random values for all parameters
+          complexity = Math.floor(Math.random() * 10) + 1;
+          creativity = Math.floor(Math.random() * 100);
+          coherence = Math.floor(Math.random() * 100);
+          energy = Math.floor(Math.random() * 100);
+          tempo = Math.floor(Math.random() * 100) + 60; // 60-160 BPM
+          swing = Math.floor(Math.random() * 100);
+          
+          randomizePattern();
+          break;
+      }
+      
+      // Update sliders to match preset
+      document.getElementById('complexity').value = complexity;
+      document.getElementById('complexity-value').textContent = complexity;
+      
+      document.getElementById('creativity').value = creativity;
+      document.getElementById('creativity-value').textContent = creativity;
+      
+      document.getElementById('coherence').value = coherence;
+      document.getElementById('coherence-value').textContent = coherence;
+      
+      document.getElementById('energy').value = energy;
+      document.getElementById('energy-value').textContent = energy;
+      
+      document.getElementById('tempo').value = tempo;
+      document.getElementById('tempo-value').textContent = tempo;
+      document.getElementById('tempo-display').textContent = tempo;
+      
+      document.getElementById('swing').value = swing;
+      document.getElementById('swing-value').textContent = swing;
+      
+      // Apply changes
+      updateTempo();
+      updateSwing();
+      updateNeuralAnalysis();
+      updateNeuralVisualization();
+    }
+    
+    // Generate a new pattern based on neural parameters
+    function generatePattern() {
+      clearPattern();
+      
+      const complexity = parseInt(document.getElementById('complexity').value);
+      const creativity = parseInt(document.getElementById('creativity').value) / 100;
+      const coherence = parseInt(document.getElementById('coherence').value) / 100;
+      const energy = parseInt(document.getElementById('energy').value) / 100;
+      
+      // Base pattern density on energy level
+      const baseDensity = energy * 0.6;
+      
+      // For each layer, create a rhythm pattern that makes musical sense
+      for (let layer = 0; layer < numLayers; layer++) {
+        // Different instruments have different typical patterns
+        let layerDensity;
+        
+        switch (layer) {
+          case 0: // Kick - more regular, focused on downbeats
+            layerDensity = baseDensity * 0.8;
+            for (let step = 0; step < numSteps; step++) {
+              // Higher chance on downbeats (assuming 4/4 time)
+              const isDownbeat = step % 4 === 0;
+              const probability = isDownbeat ? 
+                layerDensity * (1 + coherence) : 
+                layerDensity * (1 - coherence) * creativity;
+              
+              if (Math.random() < probability) {
+                toggleCell(layer, step, isDownbeat && Math.random() < 0.8);
+              }
+            }
+            break;
+            
+          case 1: // Snare - typically on 2 and 4 in 4/4
+            layerDensity = baseDensity * 0.7;
+            for (let step = 0; step < numSteps; step++) {
+              // Higher chance on beats 2 and 4
+              const isSnarebeat = step % 4 === 2;
+              const probability = isSnarebeat ? 
+                layerDensity * (1 + coherence) : 
+                layerDensity * (1 - coherence) * creativity;
+              
+              if (Math.random() < probability) {
+                toggleCell(layer, step, isSnarebeat && Math.random() < 0.7);
+              }
+            }
+            break;
+            
+          case 2: // Hi-hat - more regular pattern, often 8th or 16th notes
+            layerDensity = baseDensity * (1 + 0.3 * energy);
+            for (let step = 0; step < numSteps; step++) {
+              // Higher chance on every 8th note
+              const isEighth = step % 2 === 0;
+              const probability = isEighth ? 
+                layerDensity : 
+                layerDensity * 0.8;
+              
+              if (Math.random() < probability) {
+                // Accents typically on downbeats
+                toggleCell(layer, step, step % 4 === 0 && Math.random() < 0.6);
+              }
+            }
+            break;
+            
+          default: // Percussion - more varied and dependent on creativity
+            layerDensity = baseDensity * 0.5 * (0.5 + creativity);
+            
+            // For higher complexity, add some polyrhythmic elements
+            if (complexity > 6) {
+              // Create polyrhythmic pattern (for example, 3 against 4)
+              const polyLength = 3 + (layer % 3);
+              for (let step = 0; step < numSteps; step++) {
+                if (step % polyLength === 0 && Math.random() < coherence) {
+                  toggleCell(layer, step, Math.random() < 0.4);
+                } else if (Math.random() < layerDensity * creativity * 0.3) {
+                  toggleCell(layer, step, false);
+                }
+              }
+            } else {
+              // Simpler rhythmic patterns
+              for (let step = 0; step < numSteps; step++) {
+                if (Math.random() < layerDensity) {
+                  toggleCell(layer, step, Math.random() < 0.3);
+                }
+              }
+            }
+            break;
+        }
+      }
+      
+      // Update analysis and visualization
+      updateNeuralAnalysis();
+      updateNeuralVisualization();
+    }
+    
+    // Evolve the current pattern
+    function evolvePattern() {
+      const creativity = parseInt(document.getElementById('creativity').value) / 100;
+      const coherence = parseInt(document.getElementById('coherence').value) / 100;
+      
+      // Keep the basic structure but introduce variations
+      for (let layer = 0; layer < numLayers; layer++) {
+        for (let step = 0; step < numSteps; step++) {
+          // Probability of change based on creativity and inverse of coherence
+          const changeProb = creativity * (1 - coherence * 0.8);
+          
+          if (Math.random() < changeProb) {
+            // Decide what change to make
+            const randomValue = Math.random();
+            
+            if (sequencerGrid[layer][step]) {
+              // If cell is active, we might remove it or toggle accent
+              if (randomValue < 0.3) {
+                // Remove the note
+                const cell = document.querySelector(`.grid-cell[data-row="${layer}"][data-col="${step}"]`);
+                cell.classList.remove('active', 'accent');
+                sequencerGrid[layer][step] = false;
+              } else if (randomValue < 0.6 && sequencerGrid[layer][step] !== 'accent') {
+                // Add accent
+                const cell = document.querySelector(`.grid-cell[data-row="${layer}"][data-col="${step}"]`);
+                cell.classList.add('accent');
+                sequencerGrid[layer][step] = 'accent';
+              } else if (randomValue < 0.9 && sequencerGrid[layer][step] === 'accent') {
+                // Remove accent
+                const cell = document.querySelector(`.grid-cell[data-row="${layer}"][data-col="${step}"]`);
+                cell.classList.remove('accent');
+                sequencerGrid[layer][step] = true;
+              }
+            } else {
+              // If cell is inactive, we might add it
+              if (randomValue < 0.2) {
+                // Add note with accent
+                const cell = document.querySelector(`.grid-cell[data-row="${layer}"][data-col="${step}"]`);
+                cell.classList.add('active', 'accent');
+                sequencerGrid[layer][step] = 'accent';
+              } else if (randomValue < 0.5) {
+                // Add regular note
+                const cell = document.querySelector(`.grid-cell[data-row="${layer}"][data-col="${step}"]`);
+                cell.classList.add('active');
+                sequencerGrid[layer][step] = true;
+              }
+            }
+          }
+        }
+      }
+      
+      // Update analysis and visualization
+      updateNeuralAnalysis();
+      updateNeuralVisualization();
+      
+      // Show a feedback message
+      const feedbackElement = document.querySelector('.feedback-message');
+      feedbackElement.textContent = "Pattern evolved successfully. New elements introduced while maintaining the core structure.";
+    }
+    
+    // Update neural analysis metrics
+    function updateNeuralAnalysis() {
+      // Calculate novelty score
+      const uniquePatterns = calculateUniquePatterns();
+      const noveltyScore = Math.min(100, Math.floor(uniquePatterns / (numLayers * 0.5) * 100));
+      document.getElementById('novelty-value').textContent = `${noveltyScore}%`;
+      
+      // Calculate rhythmic balance
+      const energy = parseInt(document.getElementById('energy').value);
+      const complexity = parseInt(document.getElementById('complexity').value);
+      
+      let balanceScore = 0;
+      
+      // Check if we have a good kick and snare relationship
+      if (hasKickSnarePattern()) {
+        balanceScore += 40;
+      }
+      
+      // Check for good distribution of notes
+      const distribution = calculateDistribution();
+      balanceScore += distribution * 30;
+      
+      // Check for good use of accents
+      const accentUse = calculateAccentUse();
+      balanceScore += accentUse * 30;
+      
+      document.getElementById('balance-value').textContent = `${Math.min(100, Math.floor(balanceScore))}%`;
+      
+      // Complexity score is derived from the actual pattern, not just the slider
+      const complexityScore = (
+        (uniquePatterns / numLayers) * 0.5 + 
+        (complexity / 10) * 0.3 + 
+        (countSyncopation() / (numSteps * numLayers)) * 20
+      ).toFixed(1);
+      
+      document.getElementById('complexity-score').textContent = complexityScore;
+      
+      // Syncopation score
+      const syncopation = Math.min(100, Math.floor(countSyncopation() / (numSteps * 0.3) * 100));
+      document.getElementById('syncopation').textContent = `${syncopation}%`;
+      
+      // Update network complexity display
+      updateNetworkComplexityDisplay();
+    }
+    
+    // Calculate number of unique patterns across layers
+    function calculateUniquePatterns() {
+      const patterns = new Set();
+      
+      for (let layer = 0; layer < numLayers; layer++) {
+        let pattern = '';
+        for (let step = 0; step < numSteps; step++) {
+          if (sequencerGrid[layer][step] === 'accent') {
+            pattern += 'A';
+          } else if (sequencerGrid[layer][step]) {
+            pattern += '1';
+          } else {
+            pattern += '0';
+          }
+        }
+        patterns.add(pattern);
+      }
+      
+      return patterns.size;
+    }
+    
+    // Check if we have a typical kick-snare pattern (like in most dance music)
+    function hasKickSnarePattern() {
+      // Only check if we have at least 2 layers
+      if (numLayers < 2) return false;
+      
+      // Check kick on 1 and 5 (assuming 8 steps = 2 bars)
+      const kickOn1 = sequencerGrid[0][0];
+      const kickOn5 = numSteps >= 8 ? sequencerGrid[0][4] : false;
+      
+      // Check snare on 3 and 7
+      const snareOn3 = numSteps >= 4 ? sequencerGrid[1][2] : false;
+      const snareOn7 = numSteps >= 8 ? sequencerGrid[1][6] : false;
+      
+      return (kickOn1 && snareOn3) || (kickOn1 && kickOn5 && snareOn3 && snareOn7);
+    }
+    
+    // Calculate distribution of notes
+    function calculateDistribution() {
+      let totalNotes = 0;
+      let totalPossibleNotes = numLayers * numSteps;
+      
+      for (let layer = 0; layer < numLayers; layer++) {
+        for (let step = 0; step < numSteps; step++) {
+          if (sequencerGrid[layer][step]) {
+            totalNotes++;
+          }
+        }
+      }
+      
+      // A good distribution is neither too sparse nor too dense
+      // Ideal range is about 20-40% filled
+      const fillPercentage = totalNotes / totalPossibleNotes;
+      
+      if (fillPercentage < 0.1) return 0.3; // Too sparse
+      if (fillPercentage > 0.7) return 0.5; // Too dense
+      if (fillPercentage > 0.5) return 0.7; // Somewhat dense
+      if (fillPercentage > 0.15 && fillPercentage < 0.45) return 1.0; // Ideal range
+      
+      return 0.8; // Decent distribution
+    }
+    
+    // Calculate good use of accents
+    function calculateAccentUse() {
+      let totalNotes = 0;
+      let accentedNotes = 0;
+      
+      for (let layer = 0; layer < numLayers; layer++) {
+        for (let step = 0; step < numSteps; step++) {
+          if (sequencerGrid[layer][step]) {
+            totalNotes++;
+            if (sequencerGrid[layer][step] === 'accent') {
+              accentedNotes++;
+            }
+          }
+        }
+      }
+      
+      if (totalNotes === 0) return 0;
+      
+      // Good accent use is around 20-40% of notes
+      const accentPercentage = accentedNotes / totalNotes;
+      
+      if (accentPercentage === 0) return 0.3; // No accents
+      if (accentPercentage > 0.7) return 0.5; // Too many accents
+      if (accentPercentage > 0.15 && accentPercentage < 0.45) return 1.0; // Ideal range
+      
+      return 0.8; // Decent accent use
+    }
+    
+    // Count syncopation (notes on offbeats)
+    function countSyncopation() {
+      let syncopatedNotes = 0;
+      
+      for (let layer = 0; layer < numLayers; layer++) {
+        for (let step = 0; step < numSteps; step++) {
+          // Check if note is on an offbeat
+          const isOffbeat = step % 2 === 1;
+          if (isOffbeat && sequencerGrid[layer][step]) {
+            syncopatedNotes++;
+          }
+        }
+      }
+      
+      return syncopatedNotes;
+    }
+    
+    // Update network complexity display
+    function updateNetworkComplexityDisplay() {
+      const complexity = parseInt(document.getElementById('complexity').value);
+      const neurons = 32 + complexity * 16;
+      const connections = neurons * (4 + Math.floor(complexity / 3));
+      const hiddenLayers = 2 + Math.floor(complexity / 4);
+      
+      document.querySelector('.complexity-item:nth-child(1) .complexity-value').textContent = neurons;
+      document.querySelector('.complexity-item:nth-child(2) .complexity-value').textContent = connections.toLocaleString();
+      document.querySelector('.complexity-item:nth-child(3) .complexity-value').textContent = hiddenLayers;
+      
+      // Learning rate decreases with complexity (more complex networks need finer tuning)
+      const learningRate = (0.002 - (complexity * 0.0001)).toFixed(4);
+      document.querySelector('.complexity-item:nth-child(5) .complexity-value').textContent = learningRate;
+    }
+    
+    // Toggle 3D visualization
+    function toggleVisualization(enabled) {
+      const networkContainer = document.getElementById('network-container');
+      const sequencerGrid = document.getElementById('sequencer-grid');
+      
+      if (enabled) {
+        networkContainer.style.display = 'block';
+        sequencerGrid.style.opacity = '0.9';
+        updateNeuralVisualization();
+      } else {
+        networkContainer.style.display = 'none';
+        sequencerGrid.style.opacity = '1';
+      }
+    }
+    
+    // Initialize Three.js for neural network visualization
+    function initThree() {
+      const container = document.getElementById('network-container');
+      
+      // Scene setup
+      scene = new THREE.Scene();
+      
+      // Camera setup
+      camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+      camera.position.z = 30;
+      
+      // Renderer setup
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setClearColor(0x000000, 0);
+      container.appendChild(renderer.domElement);
+      
+      // Add subtle ambient light
+      const ambientLight = new THREE.AmbientLight(0x222266, 0.8);
+      scene.add(ambientLight);
+      
+      // Add directional lights with colors
+      const light1 = new THREE.DirectionalLight(0x00f0ff, 0.7);
+      light1.position.set(5, 5, 5);
+      scene.add(light1);
+      
+      const light2 = new THREE.DirectionalLight(0x7700ff, 0.7);
+      light2.position.set(-5, -5, 5);
+      scene.add(light2);
+      
+      // Post-processing
+      composer = new THREE.EffectComposer(renderer);
+      const renderPass = new THREE.RenderPass(scene, camera);
+      composer.addPass(renderPass);
+      
+      const bloomPass = new THREE.UnrealBloomPass(
+        new THREE.Vector2(container.clientWidth, container.clientHeight),
+        1.5, // strength
+        0.4, // radius
+        0.85 // threshold
+      );
+      composer.addPass(bloomPass);
+      
+      // Build initial neural network
+      updateNeuralVisualization();
+      
+      // Handle window resize
+      window.addEventListener('resize', onWindowResize);
+    }
+    
+    // Create neural network visualization
+    function updateNeuralVisualization() {
+      // Clear existing network
+      neurons.forEach(neuron => scene.remove(neuron));
+      connections.forEach(connection => scene.remove(connection));
+      neurons = [];
+      connections = [];
+      
+      // Get complexity parameters
+      const complexity = parseInt(document.getElementById('complexity').value);
+      const layerCount = 2 + Math.floor(complexity / 4); // Hidden layers
+      const neuronsPerHiddenLayer = 8 + complexity * 2;
+      
+      // Input layer has one neuron per sequencer layer
+      const inputNeurons = numLayers;
+      
+      // Output layer has one neuron per step
+      const outputNeurons = numSteps;
+      
+      // Colors
+      const inputColor = new THREE.Color(0x00f0ff);
+      const hiddenColor = new THREE.Color(0x7700ff);
+      const outputColor = new THREE.Color(0xff00aa);
+      
+      // Spacing
+      const layerSpacing = 10;
+      const neuronSpacing = 2.5;
+      
+      // Create input layer
+      const inputLayer = createNeuronLayer(inputNeurons, -layerSpacing * (layerCount / 2), 0, inputColor);
+      
+      // Create hidden layers
+      const hiddenLayers = [];
+      for (let i = 0; i < layerCount; i++) {
+        const x = -layerSpacing * (layerCount / 2) + layerSpacing * (i + 1);
+        hiddenLayers.push(createNeuronLayer(neuronsPerHiddenLayer, x, 0, hiddenColor));
+      }
+      
+      // Create output layer
+      const outputLayer = createNeuronLayer(outputNeurons, layerSpacing * (layerCount / 2), 0, outputColor);
+      
+      // Create connections between layers
+      // Input to first hidden layer
+      createLayerConnections(inputLayer, hiddenLayers[0]);
+      
+      // Between hidden layers
+      for (let i = 0; i < hiddenLayers.length - 1; i++) {
+        createLayerConnections(hiddenLayers[i], hiddenLayers[i + 1]);
+      }
+      
+      // Last hidden layer to output
+      createLayerConnections(hiddenLayers[hiddenLayers.length - 1], outputLayer);
+      
+      // Highlight active patterns
+      updateVisualFromSequencer();
+    }
+    
+    // Create a layer of neurons
+    function createNeuronLayer(count, x, zOffset, color) {
+      const layer = [];
+      const totalHeight = count * 2;
+      const startY = -totalHeight / 2;
+      
+      for (let i = 0; i < count; i++) {
+        const y = startY + i * 2;
+        const neuron = createNeuron(x, y, zOffset, color);
+        layer.push(neuron);
+      }
+      
+      return layer;
+    }
+    
+    // Create a single neuron
+    function createNeuron(x, y, z, color) {
+      const geometry = new THREE.SphereGeometry(0.5, 16, 16);
+      const material = new THREE.MeshPhongMaterial({
+        color: color,
+        emissive: color,
+        emissiveIntensity: 0.3,
+        transparent: true,
+        opacity: 0.8
+      });
+      
+      const neuron = new THREE.Mesh(geometry, material);
+      neuron.position.set(x, y, z);
+      neuron.userData = {
+        isActive: false,
+        baseColor: color.clone(),
+        baseScale: 1,
+        pulsePhase: Math.random() * Math.PI * 2
+      };
+      
+      scene.add(neuron);
+      neurons.push(neuron);
+      
+      return neuron;
+    }
+    
+    // Create connections between two layers
+    function createLayerConnections(layerA, layerB) {
+      // Determine connection probability based on complexity
+      const complexity = parseInt(document.getElementById('complexity').value);
+      let connectionProb = 0.3 + (complexity / 20); // 0.3 to 0.8
+      
+      // For smaller networks, ensure more connections
+      if (layerA.length < 5 || layerB.length < 5) {
+        connectionProb += 0.2;
+      }
+      
+      for (let i = 0; i < layerA.length; i++) {
+        for (let j = 0; j < layerB.length; j++) {
+          // Create connection based on probability
+          if (Math.random() < connectionProb) {
+            createConnection(layerA[i], layerB[j]);
+          }
+        }
+      }
+    }
+    
+    // Create a connection between two neurons
+    function createConnection(neuronA, neuronB) {
+      const posA = neuronA.position;
+      const posB = neuronB.position;
+      
+      const points = [
+        new THREE.Vector3(posA.x, posA.y, posA.z),
+        new THREE.Vector3(posB.x, posB.y, posB.z)
+      ];
+      
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      
+      // Blend colors of the two neurons
+      const colorA = neuronA.userData.baseColor;
+      const colorB = neuronB.userData.baseColor;
+      const blendedColor = colorA.clone().lerp(colorB, 0.5);
+      
+      const material = new THREE.LineBasicMaterial({
+        color: blendedColor,
+        transparent: true,
+        opacity: 0.3
+      });
+      
+      const connection = new THREE.Line(geometry, material);
+      connection.userData = {
+        neuronA: neuronA,
+        neuronB: neuronB,
+        active: false,
+        baseColor: blendedColor.clone()
+      };
+      
+      scene.add(connection);
+      connections.push(connection);
+      
+      return connection;
+    }
+    
+    // Update visualization based on sequencer state
+    function updateVisualFromSequencer() {
+      // Reset all neurons
+      neurons.forEach(neuron => {
+        neuron.userData.isActive = false;
+        neuron.material.emissiveIntensity = 0.3;
+        neuron.scale.set(1, 1, 1);
+      });
+      
+      // Reset all connections
+      connections.forEach(connection => {
+        connection.userData.active = false;
+        connection.material.opacity = 0.2;
+      });
+      
+      // Check for input layer (first layer of neurons)
+      if (neurons.length < numLayers) return;
+      
+      // Activate neurons based on sequencer state
+      for (let layer = 0; layer < numLayers; layer++) {
+        let hasActiveStep = false;
+        
+        for (let step = 0; step < numSteps; step++) {
+          if (sequencerGrid[layer][step]) {
+            hasActiveStep = true;
+            
+            // Activate corresponding output neuron if it exists
+            if (neurons.length > numLayers + numSteps && step < numSteps) {
+              const outputNeuron = neurons[neurons.length - numSteps + step];
+              activateNeuron(outputNeuron, sequencerGrid[layer][step] === 'accent' ? 2 : 1);
+            }
+          }
+        }
+        
+        // Activate input neuron if this layer has any active steps
+        if (hasActiveStep && layer < numLayers) {
+          const inputNeuron = neurons[layer];
+          activateNeuron(inputNeuron, 1.5);
+        }
+      }
+    }
+    
+    // Activate a neuron in the visualization
+    function activateNeuron(neuron, intensity = 1) {
+      neuron.userData.isActive = true;
+      
+      // Make neuron glow and pulse
+      gsap.to(neuron.material, {
+        emissiveIntensity: 0.7 * intensity,
+        duration: 0.3,
+        ease: "power2.out"
+      });
+      
+      gsap.to(neuron.scale, {
+        x: 1.3 * intensity,
+        y: 1.3 * intensity,
+        z: 1.3 * intensity,
+        duration: 0.3,
+        ease: "back.out(1.7)"
+      });
+      
+      // Activate connections from this neuron
+      activateConnectionsFrom(neuron);
+    }
+    
+    // Trigger a neuron for a specific layer
+    function triggerNeuronForLayer(layer) {
+      if (!isVisualizationActive || neurons.length < numLayers) return;
+      
+      // Activate input neuron for this layer
+      if (layer < numLayers) {
+        const inputNeuron = neurons[layer];
+        
+        // Even stronger activation for playing notes
+        gsap.to(inputNeuron.material, {
+          emissiveIntensity: 1,
+          duration: 0.2,
+          ease: "power2.out",
+          yoyo: true,
+          repeat: 1
+        });
+        
+        gsap.to(inputNeuron.scale, {
+          x: 2,
+          y: 2,
+          z: 2,
+          duration: 0.2,
+          ease: "back.out(2)",
+          yoyo: true,
+          repeat: 1
+        });
+        
+        // Activate connections with a traveling pulse
+        const connectionsFromInput = connections.filter(
+          conn => conn.userData.neuronA === inputNeuron || conn.userData.neuronB === inputNeuron
+        );
+        
+        connectionsFromInput.forEach(connection => {
+          // Create pulse along connection
+          gsap.to(connection.material, {
+            opacity: 0.9,
+            duration: 0.1,
+            yoyo: true,
+            repeat: 1,
+            onComplete: () => {
+              // After connection lights up, light up the connected neuron
+              const otherNeuron = connection.userData.neuronA === inputNeuron ? 
+                connection.userData.neuronB : connection.userData.neuronA;
+              
+              gsap.to(otherNeuron.material, {
+                emissiveIntensity: 0.8,
+                duration: 0.2,
+                delay: 0.1,
+                yoyo: true,
+                repeat: 1
+              });
+              
+              gsap.to(otherNeuron.scale, {
+                x: 1.5,
+                y: 1.5,
+                z: 1.5,
+                duration: 0.2,
+                delay: 0.1,
+                yoyo: true,
+                repeat: 1
+              });
+              
+              // Continue the activation chain
+              setTimeout(() => {
+                activateConnectionsFrom(otherNeuron, 0.8);
+              }, 150);
+            }
+          });
+        });
+      }
+    }
+    
+    // Activate connections from a specific neuron
+    function activateConnectionsFrom(neuron, intensity = 0.7) {
+      connections.forEach(connection => {
+        if (connection.userData.neuronA === neuron || connection.userData.neuronB === neuron) {
+          connection.userData.active = true;
+          
+          gsap.to(connection.material, {
+            opacity: intensity,
+            duration: 0.3,
+            ease: "power1.out",
+            onComplete: () => {
+              // After connection lights up, potentially light up the connected neuron
+              if (Math.random() < 0.7) {
+                const otherNeuron = connection.userData.neuronA === neuron ? 
+                  connection.userData.neuronB : connection.userData.neuronA;
+                
+                // Only activate if not already active and with reduced intensity
+                if (!otherNeuron.userData.isActive) {
+                  activateNeuron(otherNeuron, intensity * 0.7);
+                }
+              }
+            }
+          });
+        }
+      });
+    }
+    
+    // Handle window resize
+    function onWindowResize() {
+      const container = document.getElementById('network-container');
+      
+      // Update camera
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      
+      // Update renderer
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      composer.setSize(container.clientWidth, container.clientHeight);
+      
+      // Update visualizer canvas
+      visualizer.width = visualizer.clientWidth;
+      visualizer.height = visualizer.clientHeight;
+    }
+    
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      const time = performance.now() * 0.001; // Time in seconds
+      
+      // Animate neurons
+      neurons.forEach(neuron => {
+        // Apply subtle pulsing effect
+        if (!neuron.userData.isActive) {
+          const pulse = 1 + 0.05 * Math.sin(time * 2 + neuron.userData.pulsePhase);
+          neuron.scale.set(pulse, pulse, pulse);
+        }
+      });
+      
+      // Update connections
+      connections.forEach(connection => {
+        if (!connection.userData.active) {
+          const pulse = 0.1 + 0.05 * Math.sin(time * 1.5);
+          connection.material.opacity = pulse;
+        }
+      });
+      
+      // Update audio visualizer
+      updateAudioVisualizer();
+      
+      // Render with post-processing
+      if (isVisualizationActive) {
+        composer.render();
+      }
+    }
+    
+    // Update audio visualizer
+    function updateAudioVisualizer() {
+      if (!visualizer || !visualizerContext || !analyzer) return;
+      
+      // Get data from analyzer
+      const bufferLength = analyzer.getValue().length;
+      const dataArray = analyzer.getValue();
+      
+      // Clear canvas
+      visualizerContext.clearRect(0, 0, visualizer.width, visualizer.height);
+      
+      // Draw waveform
+      visualizerContext.lineWidth = 2;
+      visualizerContext.strokeStyle = 'rgba(0, 240, 255, 0.8)';
+      visualizerContext.beginPath();
+      
+      const sliceWidth = visualizer.width / bufferLength;
+      let x = 0;
+      
+      for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] * 0.5 + 0.5; // Normalize to 0-1
+        const y = v * visualizer.height;
+        
+        if (i === 0) {
+          visualizerContext.moveTo(x, y);
+        } else {
+          visualizerContext.lineTo(x, y);
+        }
+        
+        x += sliceWidth;
+      }
+      
+      visualizerContext.lineTo(visualizer.width, visualizer.height / 2);
+      visualizerContext.stroke();
+      
+      // Add gradient fill under the line
+      const gradient = visualizerContext.createLinearGradient(0, 0, 0, visualizer.height);
+      gradient.addColorStop(0, 'rgba(0, 240, 255, 0.2)');
+      gradient.addColorStop(0.5, 'rgba(119, 0, 255, 0.1)');
+      gradient.addColorStop(1, 'rgba(255, 0, 170, 0.05)');
+      
+      visualizerContext.fillStyle = gradient;
+      visualizerContext.fill();
+    }
+  </script>
+</body>
+</html>
