@@ -1,0 +1,165 @@
+// server.js - Main server orchestration for NeuroFusionOS
+const express = require('express');
+const http = require('http');
+const WebSocket = require('ws');
+const path = require('path');
+const { Worker } = require('worker_threads');
+
+// Import core modules
+const apiRoutes = require('./api/routes');
+const { initializeMemory } = require('./memory/memoryManager');
+const { initializeAgents } = require('./agents/agentManager');
+
+// Initialize Express app
+const app = express();
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+// Middleware
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// API Routes
+app.use('/api', apiRoutes);
+
+// Serve main interface
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// WebSocket connection for real-time communication
+wss.on('connection', (ws) => {
+  console.log('Client connected to NeuroFusionOS');
+  
+  // Send initial system state
+  ws.send(JSON.stringify({
+    type: 'system_status',
+    data: {
+      status: 'online',
+      memory_usage: process.memoryUsage(),
+      active_agents: ['researcher', 'coder', 'memory_manager'],
+      system_version: '0.1.0'
+    }
+  }));
+  
+  // Handle messages from clients
+  ws.on('message', async (message) => {
+    try {
+      const parsedMessage = JSON.parse(message);
+      console.log('Received:', parsedMessage);
+      
+      // Route message to appropriate system component
+      switch (parsedMessage.type) {
+        case 'query':
+          // Process query through reasoning chain
+          const response = await processQuery(parsedMessage.data);
+          ws.send(JSON.stringify({
+            type: 'query_response',
+            data: response
+          }));
+          break;
+          
+        case 'system_command':
+          // Handle system commands
+          const commandResult = await handleSystemCommand(parsedMessage.data);
+          ws.send(JSON.stringify({
+            type: 'command_result',
+            data: commandResult
+          }));
+          break;
+          
+        default:
+          ws.send(JSON.stringify({
+            type: 'error',
+            data: 'Unknown message type'
+          }));
+      }
+    } catch (error) {
+      console.error('Error processing message:', error);
+      ws.send(JSON.stringify({
+        type: 'error',
+        data: `Error processing message: ${error.message}`
+      }));
+    }
+  });
+  
+  // Handle disconnection
+  ws.on('close', () => {
+    console.log('Client disconnected from NeuroFusionOS');
+  });
+});
+
+// Initialize system components
+async function initializeSystem() {
+  try {
+    console.log('Initializing NeuroFusionOS...');
+    
+    // Initialize vector memory system
+    await initializeMemory();
+    console.log('Memory systems initialized');
+    
+    // Initialize agent system
+    await initializeAgents();
+    console.log('Agent system initialized');
+    
+    // Start worker threads for CPU-intensive operations
+    const quantumWorker = new Worker('./quantum/quantumWorker.js');
+    quantumWorker.on('message', (result) => {
+      console.log('Quantum simulation result:', result);
+    });
+    
+    console.log('NeuroFusionOS initialization complete');
+    
+    // Begin system self-monitoring
+    startSystemMonitoring();
+  } catch (error) {
+    console.error('Error during system initialization:', error);
+    process.exit(1);
+  }
+}
+
+// Process incoming queries through reasoning chain
+async function processQuery(query) {
+  // This would connect to the reasoning chain in a full implementation
+  return {
+    result: `Processed query: ${query}`,
+    confidence: 0.85,
+    reasoning_path: ['initial_analysis', 'context_retrieval', 'reasoning', 'synthesis'],
+    memory_references: [
+      { id: 'mem123', relevance: 0.92 },
+      { id: 'mem456', relevance: 0.78 }
+    ]
+  };
+}
+
+// Handle system commands
+async function handleSystemCommand(command) {
+  // This would handle various system management commands
+  return {
+    command_processed: true,
+    system_status: 'healthy'
+  };
+}
+
+// System self-monitoring
+function startSystemMonitoring() {
+  setInterval(() => {
+    const memUsage = process.memoryUsage();
+    console.log('System monitoring:', {
+      heap_used: Math.round(memUsage.heapUsed / 1024 / 1024) + 'MB',
+      heap_total: Math.round(memUsage.heapTotal / 1024 / 1024) + 'MB',
+      external: Math.round(memUsage.external / 1024 / 1024) + 'MB'
+    });
+    
+    // In a full implementation, this would trigger self-healing and optimization
+  }, 60000); // Check every minute
+}
+
+// Start server
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, async () => {
+  console.log(`NeuroFusionOS server running on port ${PORT}`);
+  await initializeSystem();
+});
+
+module.exports = server;
